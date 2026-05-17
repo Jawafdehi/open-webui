@@ -35,6 +35,7 @@ class Tool(Base):  # database table definition
 class ToolMeta(BaseModel):
     description: str | None = None
     manifest: dict | None = {}
+    needs_approval: bool | None = False
 
 
 class ToolModel(BaseModel):

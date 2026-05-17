@@ -52,6 +52,7 @@
 	import 'tippy.js/dist/tippy.css';
 
 	import { executeToolServer, getBackendConfig, getModels, getVersion } from '$lib/apis';
+	import { registerApproval } from '$lib/utils/tool-approval';
 	import { getSessionUser, updateUserTimezone, userSignOut } from '$lib/apis/auths';
 	import { getAllTags, getChatList } from '$lib/apis/chats';
 	import { chatCompletion } from '$lib/apis/openai';
@@ -518,6 +519,10 @@
 			} else if (type === 'execute:tool') {
 				console.log('execute:tool', data);
 				executeTool(data, cb, event.chat_id);
+				return;
+			} else if (type === 'approval:tool') {
+				console.log('approval:tool', data);
+				registerApproval(data.id, data.name, data.arguments, cb);
 				return;
 			} else if (type === 'request:chat:completion') {
 				console.log(data, $socket.id);

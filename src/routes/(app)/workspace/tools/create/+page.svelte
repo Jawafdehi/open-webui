@@ -85,7 +85,7 @@
 		<ToolkitEditor
 			id={tool?.id ?? ''}
 			name={tool?.name ?? ''}
-			meta={tool?.meta ?? { description: '' }}
+			meta={tool?.meta ?? { description: '', needs_approval: false }}
 			content={tool?.content ?? ''}
 			accessGrants={tool?.access_grants !== undefined ? tool.access_grants : []}
 			{clone}
