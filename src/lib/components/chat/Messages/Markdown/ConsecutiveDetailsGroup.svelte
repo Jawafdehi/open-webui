@@ -10,6 +10,7 @@
 	import WrenchSolid from '$lib/components/icons/WrenchSolid.svelte';
 	import Sparkles from '$lib/components/icons/Sparkles.svelte';
 	import CheckCircle from '$lib/components/icons/CheckCircle.svelte';
+	import QuestionMarkCircle from '$lib/components/icons/QuestionMarkCircle.svelte';
 	import FullHeightIframe from '$lib/components/common/FullHeightIframe.svelte';
 
 	import { settings } from '$lib/stores';
@@ -46,7 +47,12 @@
 	$: reasoningCount = tokens.filter((t) => t?.attributes?.type === 'reasoning').length;
 	$: hasPending =
 		!messageDone &&
-		tokens.some((t) => t?.attributes?.done !== undefined && t?.attributes?.done !== 'true');
+		tokens.some((t) => t?.attributes?.done !== undefined && t?.attributes?.done !== 'true' && t?.attributes?.done !== 'awaiting_approval');
+	$: isAwaitingApproval =
+		!messageDone &&
+		tokens.some((t) => t?.attributes?.done === 'awaiting_approval');
+
+	$: if (isAwaitingApproval) open = true;
 
 	$: codeInterpreterCount = tokens.filter((t) => t?.attributes?.type === 'code_interpreter').length;
 
@@ -106,7 +112,11 @@
 		return detail;
 	})();
 
-	$: prefixText = hasPending ? $i18n.t('Exploring') : $i18n.t('Explored');
+	$: prefixText = isAwaitingApproval
+		? $i18n.t('Awaiting Approval')
+		: hasPending
+			? $i18n.t('Exploring')
+			: $i18n.t('Explored');
 </script>
 
 <div {id} class="w-full">
@@ -121,7 +131,11 @@
 	>
 		<div class="flex items-center gap-1.5">
 			<!-- Status icon -->
-			{#if hasPending}
+			{#if isAwaitingApproval}
+				<div class="text-amber-500 dark:text-amber-400">
+					<QuestionMarkCircle className="size-4" strokeWidth="2" />
+				</div>
+			{:else if hasPending}
 				<div>
 					<Spinner className="size-4" />
 				</div>

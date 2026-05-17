@@ -39,6 +39,7 @@ class Tool(Base):
 class ToolMeta(BaseModel):
     description: Optional[str] = None
     manifest: Optional[dict] = {}
+    needs_approval: Optional[bool] = False
 
 
 class ToolModel(BaseModel):

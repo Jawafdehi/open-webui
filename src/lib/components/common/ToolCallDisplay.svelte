@@ -14,9 +14,11 @@
 	import Markdown from '../chat/Messages/Markdown.svelte';
 	import WrenchSolid from '../icons/WrenchSolid.svelte';
 	import CheckCircle from '../icons/CheckCircle.svelte';
+	import QuestionMarkCircle from '../icons/QuestionMarkCircle.svelte';
 	import Image from './Image.svelte';
 	import FullHeightIframe from './FullHeightIframe.svelte';
 	import { settings } from '$lib/stores';
+	import { getApprovalCallback, clearApproval } from '$lib/utils/tool-approval';
 
 	export let id: string = '';
 	export let attributes: {
@@ -83,10 +85,35 @@
 	$: files = parseJSONString(decode(attributes?.files ?? ''));
 	$: embeds = parseJSONString(decode(attributes?.embeds ?? ''));
 	$: isDone = attributes?.done === 'true';
-	$: isExecuting = attributes?.done && attributes?.done !== 'true';
+	$: isAwaitingApproval = attributes?.done === 'awaiting_approval';
+	$: isExecuting = attributes?.done && attributes?.done !== 'true' && attributes?.done !== 'awaiting_approval';
 
 	$: parsedArgs = parseArguments(args);
 	$: parsedResult = parseJSONString(result);
+
+	let approving = false;
+
+	function handleApprove() {
+		const callId = attributes?.id;
+		if (!callId) return;
+		const cb = getApprovalCallback(callId);
+		if (cb) {
+			approving = true;
+			cb({ approved: true });
+			clearApproval(callId);
+		}
+	}
+
+	function handleDeny() {
+		const callId = attributes?.id;
+		if (!callId) return;
+		const cb = getApprovalCallback(callId);
+		if (cb) {
+			approving = true;
+			cb({ approved: false });
+			clearApproval(callId);
+		}
+	}
 </script>
 
 <div {id} class={className}>
@@ -124,7 +151,11 @@
 					: ''}"
 			>
 				<!-- Status icon -->
-				{#if isExecuting}
+				{#if isAwaitingApproval}
+					<div class="text-amber-500 dark:text-amber-400">
+						<QuestionMarkCircle className="size-4" strokeWidth="2" />
+					</div>
+				{:else if isExecuting}
 					<div>
 						<Spinner className="size-4" />
 					</div>
@@ -151,6 +182,13 @@
 									NAME: attributes.name
 								})}
 							/>
+						{:else if isAwaitingApproval}
+							<Markdown
+								id={`${componentId}-tool-call-awaiting-approval`}
+								content={$i18n.t('**{{NAME}}** is requesting permission to run', {
+									NAME: attributes.name
+								})}
+							/>
 						{:else}
 							<Markdown
 								id={`${componentId}-tool-call-executing`}
@@ -173,7 +211,7 @@
 			</div>
 		</div>
 
-		{#if open}
+		{#if isAwaitingApproval || open}
 			<div transition:slide={{ duration: 300, easing: quintOut, axis: 'y' }}>
 				<div class="border border-gray-50 dark:border-gray-850/30 rounded-2xl my-1.5 p-3 space-y-3">
 					<!-- Input -->
@@ -206,6 +244,30 @@
 										)}</pre>
 								</div>
 							{/if}
+						</div>
+					{/if}
+
+					{#if isAwaitingApproval && !approving}
+						<div>
+							<div
+								class="text-[10px] uppercase tracking-wider font-medium text-gray-400 dark:text-gray-500 mb-1.5 px-1"
+							>
+								{$i18n.t('Approval Required')}
+							</div>
+							<div class="flex gap-2 px-1">
+								<button
+									class="px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition"
+									on:click|stopPropagation={handleApprove}
+								>
+									{$i18n.t('Approve')}
+								</button>
+								<button
+									class="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-500 hover:bg-red-600 text-white transition"
+									on:click|stopPropagation={handleDeny}
+								>
+									{$i18n.t('Deny')}
+								</button>
+							</div>
 						</div>
 					{/if}
 

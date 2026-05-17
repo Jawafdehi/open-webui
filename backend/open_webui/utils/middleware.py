@@ -483,6 +483,7 @@ def serialize_output(output: list) -> str:
             call_id = item.get('call_id', '')
             name = item.get('name', '')
             arguments = item.get('arguments', '')
+            status = item.get('status', 'in_progress')
 
             result_item = tool_outputs.get(call_id)
             if result_item:
@@ -497,6 +498,10 @@ def serialize_output(output: list) -> str:
 
                 parts.append(
                     f'<details type="tool_calls" done="true" id="{call_id}" name="{name}" arguments="{html.escape(json.dumps(arguments))}" files="{html.escape(json.dumps(files)) if files else ""}" embeds="{html.escape(json.dumps(embeds))}">\n<summary>Tool Executed</summary>\n{html.escape(json.dumps(result_text, ensure_ascii=False))}\n</details>'
+                )
+            elif status == 'awaiting_approval':
+                parts.append(
+                    f'<details type="tool_calls" done="awaiting_approval" id="{call_id}" name="{name}" arguments="{html.escape(json.dumps(arguments))}">\n<summary>Awaiting Approval</summary>\n</details>'
                 )
             else:
                 parts.append(
@@ -4565,6 +4570,46 @@ async def streaming_chat_response_handler(response, ctx):
 
                             tool_type = tool.get('type', '')
                             direct_tool = tool.get('direct', False)
+                            needs_approval = tool.get('needs_approval', False)
+
+                            if needs_approval and event_caller:
+                                # Update function_call status to awaiting_approval and emit
+                                for item in output:
+                                    if item.get('type') == 'function_call' and item.get('call_id') == tool_call_id:
+                                        item['status'] = 'awaiting_approval'
+                                        break
+                                await event_emitter({
+                                    'type': 'chat:completion',
+                                    'data': {
+                                        'content': serialize_output(full_output()),
+                                        'output': full_output(),
+                                    },
+                                })
+
+                                approval_response = await event_caller(
+                                    {
+                                        'type': 'approval:tool',
+                                        'data': {
+                                            'id': tool_call_id,
+                                            'name': tool_function_name,
+                                            'arguments': tool_function_params,
+                                        },
+                                    }
+                                )
+
+                                if not approval_response or not approval_response.get('approved', False):
+                                    # Denied or error — add denial result and skip execution
+                                    results.append(
+                                        {
+                                            'tool_call_id': tool_call_id,
+                                            'content': 'Tool call was denied by the user.',
+                                        }
+                                    )
+                                    for item in output:
+                                        if item.get('type') == 'function_call' and item.get('call_id') == tool_call_id:
+                                            item['status'] = 'completed'
+                                            break
+                                    continue
 
                             try:
                                 allowed_params = spec.get('parameters', {}).get('properties', {}).keys()
