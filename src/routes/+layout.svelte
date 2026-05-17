@@ -52,7 +52,7 @@
 	import 'tippy.js/dist/tippy.css';
 
 	import { executeToolServer, getBackendConfig, getModels, getVersion } from '$lib/apis';
-	import { registerApproval } from '$lib/utils/tool-approval';
+	import { registerApproval, respondToApproval, getApprovalCallback } from '$lib/utils/tool-approval';
 	import { getSessionUser, updateUserTimezone, userSignOut } from '$lib/apis/auths';
 	import { getAllTags, getChatList } from '$lib/apis/chats';
 	import { chatCompletion } from '$lib/apis/openai';
@@ -966,13 +966,23 @@
 		};
 		window.addEventListener('resize', onResize);
 
+		const approvalPendingHandler = (data) => {
+			if (!getApprovalCallback(data.id)) {
+				registerApproval(data.id, data.name, data.arguments, (response) => {
+					respondToApproval(data.id, response.approved);
+				});
+			}
+		};
+
 		user.subscribe(async (value) => {
 			if (value) {
 				$socket?.off('events', chatEventHandler);
 				$socket?.off('events:channel', channelEventHandler);
+				$socket?.off('approval:tool:pending', approvalPendingHandler);
 
 				$socket?.on('events', chatEventHandler);
 				$socket?.on('events:channel', channelEventHandler);
+				$socket?.on('approval:tool:pending', approvalPendingHandler);
 
 				const userSettings = await getUserSettings(localStorage.token);
 				if (userSettings) {

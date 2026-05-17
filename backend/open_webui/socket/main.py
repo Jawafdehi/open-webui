@@ -416,6 +416,39 @@ async def heartbeat(sid, data):
         await Users.update_last_active_by_id(user['id'])
 
 
+@sio.on('approval:tool:response')
+async def handle_approval_response(sid, data):
+    from open_webui.utils.pending_approvals import resolve_approval
+
+    call_id = data.get('id')
+    approved = data.get('approved', False)
+    if call_id:
+        resolve_approval(call_id, approved)
+
+
+@sio.on('approval:tool:restore')
+async def handle_approval_restore(sid, data):
+    from open_webui.utils.pending_approvals import get_pending_for_user
+
+    session = SESSION_POOL.get(sid)
+    if not session:
+        return
+
+    user_id = session.get('id')
+    pending = get_pending_for_user(user_id)
+
+    for call_id, info in pending.items():
+        await sio.emit(
+            'approval:tool:pending',
+            {
+                'id': call_id,
+                'name': info['name'],
+                'arguments': info['arguments'],
+            },
+            to=sid,
+        )
+
+
 @sio.on('join-channels')
 async def join_channel(sid, data):
     auth = data['auth'] if 'auth' in data else None
