@@ -30,7 +30,8 @@
 	export let id = '';
 	export let name = '';
 	export let meta = {
-		description: ''
+		description: '',
+		needs_approval: false
 	};
 	export let content = '';
 	export let accessGrants = [];
@@ -301,6 +302,18 @@ class Tools:
 								required
 							/>
 						</Tooltip>
+					</div>
+
+					<div class="flex items-center gap-2">
+						<input
+							id="needs-approval-{id}"
+							type="checkbox"
+							class="rounded border-gray-300 dark:border-gray-600"
+							bind:checked={meta.needs_approval}
+						/>
+						<label for="needs-approval-{id}" class="text-sm text-gray-600 dark:text-gray-300">
+							{$i18n.t('Require user approval before execution')}
+						</label>
 					</div>
 				</div>
 

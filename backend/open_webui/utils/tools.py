@@ -245,6 +245,7 @@ async def get_tools(request: Request, tool_ids: list[str], user: UserModel, extr
                     'tool_id': tool_id,
                     'callable': callable,
                     'spec': spec,
+                    'needs_approval': tool.meta.needs_approval if tool.meta else False,
                     # Misc info
                     'metadata': {
                         'file_handler': hasattr(module, 'file_handler') and module.file_handler,
