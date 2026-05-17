@@ -478,6 +478,16 @@ ENABLE_CODE_EXECUTION = ConfigVar(
     os.getenv('ENABLE_CODE_EXECUTION', 'True').lower() == 'true',
 )
 
+####################################
+# Tool Approval
+####################################
+
+ENABLE_TOOL_APPROVAL = ConfigVar(
+    'ENABLE_TOOL_APPROVAL',
+    'features.enable_tool_approval',
+    os.getenv('ENABLE_TOOL_APPROVAL', 'True').lower() == 'true',
+)
+
 CODE_EXECUTION_ENGINE = ConfigVar(
     'CODE_EXECUTION_ENGINE',
     'code_execution.engine',
