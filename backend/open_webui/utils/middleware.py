@@ -4572,7 +4572,13 @@ async def streaming_chat_response_handler(response, ctx):
                             direct_tool = tool.get('direct', False)
                             needs_approval = tool.get('needs_approval', False)
 
-                            if needs_approval and event_caller and event_emitter:
+                            if needs_approval and event_emitter:
+                                from open_webui.utils.pending_approvals import (
+                                    add_pending_approval,
+                                    wait_for_approval,
+                                    remove_pending_approval,
+                                )
+
                                 # Update function_call status to awaiting_approval and emit
                                 for item in output:
                                     if item.get('type') == 'function_call' and item.get('call_id') == tool_call_id:
@@ -4586,18 +4592,45 @@ async def streaming_chat_response_handler(response, ctx):
                                     },
                                 })
 
-                                approval_response = await event_caller(
-                                    {
-                                        'type': 'approval:tool',
-                                        'data': {
-                                            'id': tool_call_id,
-                                            'name': tool_function_name,
-                                            'arguments': tool_function_params,
-                                        },
-                                    }
-                                )
+                                # Register server-side so approval survives
+                                # WebSocket disconnects / browser tab crashes.
+                                add_pending_approval(tool_call_id, {
+                                    'name': tool_function_name,
+                                    'arguments': tool_function_params,
+                                    'user_id': str(user.id),
+                                    'chat_id': metadata.get('chat_id'),
+                                })
 
-                                if not approval_response or not approval_response.get('approved', False):
+                                # Fast path: use event_caller when session is still
+                                # alive (most approvals go through this).
+                                approval_response = None
+                                if event_caller:
+                                    try:
+                                        approval_response = await event_caller(
+                                            {
+                                                'type': 'approval:tool',
+                                                'data': {
+                                                    'id': tool_call_id,
+                                                    'name': tool_function_name,
+                                                    'arguments': tool_function_params,
+                                                },
+                                            }
+                                        )
+                                    except Exception:
+                                        pass
+
+                                # If fast path timed out / disconnected, wait for
+                                # the client to reconnect and respond via the
+                                # server-side pending-approval mechanism.
+                                if not approval_response or 'error' in approval_response:
+                                    result = await wait_for_approval(tool_call_id)
+                                    approval_response = {
+                                        'approved': result.get('approved', False)
+                                    }
+
+                                remove_pending_approval(tool_call_id)
+
+                                if not approval_response.get('approved', False):
                                     # Denied or error — add denial result and skip execution
                                     results.append(
                                         {
