@@ -18,7 +18,13 @@
 	import Image from './Image.svelte';
 	import FullHeightIframe from './FullHeightIframe.svelte';
 	import { settings } from '$lib/stores';
-	import { getApprovalCallback, clearApproval } from '$lib/utils/tool-approval';
+	import {
+		getApprovalCallback,
+		clearApproval,
+		respondToApproval,
+		requestRestore
+	} from '$lib/utils/tool-approval';
+	import { onMount } from 'svelte';
 
 	export let id: string = '';
 	export let attributes: {
@@ -97,10 +103,12 @@
 		const callId = attributes?.id;
 		if (!callId) return;
 		const cb = getApprovalCallback(callId);
+		approving = true;
 		if (cb) {
-			approving = true;
 			cb({ approved: true });
 			clearApproval(callId);
+		} else {
+			respondToApproval(callId, true);
 		}
 	}
 
@@ -108,12 +116,23 @@
 		const callId = attributes?.id;
 		if (!callId) return;
 		const cb = getApprovalCallback(callId);
+		approving = true;
 		if (cb) {
-			approving = true;
 			cb({ approved: false });
 			clearApproval(callId);
+		} else {
+			respondToApproval(callId, false);
 		}
 	}
+
+	onMount(() => {
+		if (isAwaitingApproval) {
+			const callId = attributes?.id;
+			if (callId && !getApprovalCallback(callId)) {
+				requestRestore(callId);
+			}
+		}
+	});
 </script>
 
 <div {id} class={className}>
