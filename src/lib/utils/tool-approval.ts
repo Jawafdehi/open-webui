@@ -18,12 +18,30 @@ const unsubscribe = socket.subscribe((s) => {
 	socketInstance = s;
 });
 
+/**
+ * Tool names that have been allowed-always for this chat session.
+ * When a tool is in this set, future approval requests are auto-approved.
+ */
+const sessionAllowedTools = new Set<string>();
+
+export function isToolAllowedAlways(name: string): boolean {
+	return sessionAllowedTools.has(name);
+}
+
+export function setToolAllowedAlways(name: string): void {
+	sessionAllowedTools.add(name);
+}
+
 export function registerApproval(
 	id: string,
 	name: string,
 	args: Record<string, unknown>,
 	cb: (response: { approved: boolean }) => void
 ) {
+	if (sessionAllowedTools.has(name)) {
+		cb({ approved: true });
+		return;
+	}
 	pendingApprovals.set(id, cb);
 }
 
