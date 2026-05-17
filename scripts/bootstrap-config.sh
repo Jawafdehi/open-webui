@@ -12,6 +12,7 @@ CONFIGS_DIR="${REPO_ROOT}/configs"
 
 OPENWEBUI_URL="${OPENWEBUI_URL:-http://localhost:3000}"
 OPENWEBUI_API_KEY="${OPENWEBUI_API_KEY:-}"
+SEPARATOR="============================================"
 
 # --- Helpers ---
 
@@ -21,7 +22,7 @@ api() {
     curl_args+=(-H "Authorization: Bearer ${OPENWEBUI_API_KEY}")
     curl_args+=(-H "Content-Type: application/json")
 
-    if [ -n "$body" ]; then
+    if [[ -n "$body" ]]; then
         curl_args+=(--data-raw "$body")
     fi
 
@@ -37,7 +38,7 @@ api() {
     local body_out
     body_out="$(echo "$response" | sed '$d')"
 
-    if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+    if [[ "$http_code" -ge 200 && "$http_code" -lt 300 ]]; then
         echo "$body_out"
         return 0
     else
@@ -47,7 +48,7 @@ api() {
 }
 
 check_admin() {
-    if [ -z "$OPENWEBUI_API_KEY" ]; then
+    if [[ -z "$OPENWEBUI_API_KEY" ]]; then
         echo "ERROR: OPENWEBUI_API_KEY is not set. Set it or provide --api-key." >&2
         exit 1
     fi
@@ -94,12 +95,12 @@ apply_model() {
 apply_models() {
     echo ""
     echo "==> Applying models from configs/models/"
-    if [ ! -d "${CONFIGS_DIR}/models" ]; then
+    if [[ ! -d "${CONFIGS_DIR}/models" ]]; then
         echo "  (no models directory, skipping)"
         return 0
     fi
     for file in "${CONFIGS_DIR}/models"/*.json; do
-        [ -f "$file" ] || continue
+        [[ -f "$file" ]] || continue
         apply_model "$file"
     done
 }
@@ -159,12 +160,12 @@ print(json.dumps({
 apply_prompts() {
     echo ""
     echo "==> Applying prompts from configs/prompts/"
-    if [ ! -d "${CONFIGS_DIR}/prompts" ]; then
+    if [[ ! -d "${CONFIGS_DIR}/prompts" ]]; then
         echo "  (no prompts directory, skipping)"
         return 0
     fi
     for file in "${CONFIGS_DIR}/prompts"/*.nep; do
-        [ -f "$file" ] || continue
+        [[ -f "$file" ]] || continue
         apply_prompt "$file"
     done
 }
@@ -226,7 +227,7 @@ for g in grants:
 sys.exit(1)
 " 2>/dev/null && echo "yes" || echo "no")"
 
-    if [ "$group_granted" = "yes" ]; then
+    if [[ "$group_granted" == "yes" ]]; then
         return 0
     fi
 
@@ -290,7 +291,7 @@ for g in grants:
 sys.exit(1)
 " 2>/dev/null && echo "yes" || echo "no")"
 
-    if [ "$group_granted" = "yes" ]; then
+    if [[ "$group_granted" == "yes" ]]; then
         return 0
     fi
 
@@ -334,7 +335,7 @@ for m in json.load(sys.stdin):
     print(m)
 ")"
     while IFS= read -r model_id; do
-        [ -z "$model_id" ] && continue
+        [[ -z "$model_id" ]] && continue
         set_model_access_for_group "$group_name" "$model_id"
     done <<< "$model_ids"
 
@@ -346,7 +347,7 @@ for t in json.load(sys.stdin):
     print(t)
 ")"
     while IFS= read -r tool_id; do
-        [ -z "$tool_id" ] && continue
+        [[ -z "$tool_id" ]] && continue
         set_tool_access_for_group "$group_name" "$tool_id"
     done <<< "$tool_ids"
 }
@@ -354,12 +355,12 @@ for t in json.load(sys.stdin):
 apply_groups() {
     echo ""
     echo "==> Applying groups from configs/groups/"
-    if [ ! -d "${CONFIGS_DIR}/groups" ]; then
+    if [[ ! -d "${CONFIGS_DIR}/groups" ]]; then
         echo "  (no groups directory, skipping)"
         return 0
     fi
     for file in "${CONFIGS_DIR}/groups"/*.json; do
-        [ -f "$file" ] || continue
+        [[ -f "$file" ]] || continue
         apply_group "$file"
     done
 }
@@ -385,7 +386,7 @@ upload_file() {
     local body_out
     body_out="$(echo "$upload_result" | sed '$d')"
 
-    if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+    if [[ "$http_code" -ge 200 && "$http_code" -lt 300 ]]; then
         echo "$body_out" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])"
         return 0
     fi
@@ -423,7 +424,7 @@ sys.exit(1)
 apply_knowledge_base() {
     local kb_dir="$1"
 
-    if [ ! -d "$kb_dir" ]; then
+    if [[ ! -d "$kb_dir" ]]; then
         return 0
     fi
 
@@ -457,7 +458,7 @@ apply_knowledge_base() {
         fi
     done < <(find "$kb_dir" -type f -not -name 'README.md' -print0)
 
-    if [ $uploaded -gt 0 ]; then
+    if [[ $uploaded -gt 0 ]]; then
         echo "  Uploaded ${uploaded} document(s) to ${kb_name}"
     else
         echo "  (no new documents)"
@@ -465,13 +466,13 @@ apply_knowledge_base() {
 }
 
 apply_all_knowledge() {
-    if [ ! -d "${CONFIGS_DIR}/knowledge" ]; then
+    if [[ ! -d "${CONFIGS_DIR}/knowledge" ]]; then
         echo ""
         echo "==> Knowledge: (no knowledge directory, skipping)"
         return 0
     fi
     for kb_dir in "${CONFIGS_DIR}/knowledge"/*/; do
-        [ -d "$kb_dir" ] || continue
+        [[ -d "$kb_dir" ]] || continue
         apply_knowledge_base "$kb_dir"
     done
 }
@@ -506,7 +507,7 @@ EOF
 MODE="all"
 DRY_RUN=false
 
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
         --url) OPENWEBUI_URL="$2"; shift 2 ;;
         --api-key) OPENWEBUI_API_KEY="$2"; shift 2 ;;
@@ -520,16 +521,16 @@ while [ $# -gt 0 ]; do
     esac
 done
 
-echo "============================================"
+echo "$SEPARATOR"
 echo " Jawafdehi OpenWebUI Config Bootstrap"
-echo "============================================"
+echo "$SEPARATOR"
 echo ""
 echo "API URL:   ${OPENWEBUI_URL}"
 echo "Configs:   ${CONFIGS_DIR}"
 echo "API Key:   ${OPENWEBUI_API_KEY:0:8}..."
 echo ""
 
-if [ "$DRY_RUN" = true ]; then
+if [[ "$DRY_RUN" == "true" ]]; then
     echo "DRY RUN — no changes will be made"
     echo ""
 fi
@@ -547,9 +548,10 @@ case "$MODE" in
     prompts)   apply_prompts ;;
     groups)    apply_groups ;;
     knowledge) apply_all_knowledge ;;
+    *) echo "ERROR: unknown mode '${MODE}'"; exit 1 ;;
 esac
 
 echo ""
-echo "============================================"
+echo "$SEPARATOR"
 echo " Bootstrap complete."
-echo "============================================"
+echo "$SEPARATOR"
