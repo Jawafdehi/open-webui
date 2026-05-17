@@ -22,7 +22,8 @@
 		getApprovalCallback,
 		clearApproval,
 		respondToApproval,
-		requestRestore
+		requestRestore,
+		setToolAllowedAlways
 	} from '$lib/utils/tool-approval';
 	import { onMount } from 'svelte';
 
@@ -122,6 +123,22 @@
 			clearApproval(callId);
 		} else {
 			respondToApproval(callId, false);
+		}
+	}
+
+	function handleAllowAlways() {
+		const callId = attributes?.id;
+		const toolName = attributes?.name;
+		if (!callId || !toolName) return;
+		const cb = getApprovalCallback(callId);
+		approving = true;
+		if (cb) {
+			setToolAllowedAlways(toolName);
+			cb({ approved: true });
+			clearApproval(callId);
+		} else {
+			setToolAllowedAlways(toolName);
+			respondToApproval(callId, true);
 		}
 	}
 
@@ -279,6 +296,12 @@
 									on:click|stopPropagation={handleApprove}
 								>
 									{$i18n.t('Approve')}
+								</button>
+								<button
+									class="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition"
+									on:click|stopPropagation={handleAllowAlways}
+								>
+									{$i18n.t('Allow Always')}
 								</button>
 								<button
 									class="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-500 hover:bg-red-600 text-white transition"

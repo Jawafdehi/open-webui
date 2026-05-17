@@ -2170,6 +2170,16 @@ ENABLE_CODE_EXECUTION = PersistentConfig(
     os.environ.get('ENABLE_CODE_EXECUTION', 'True').lower() == 'true',
 )
 
+####################################
+# Tool Approval
+####################################
+
+ENABLE_TOOL_APPROVAL = PersistentConfig(
+    'ENABLE_TOOL_APPROVAL',
+    'features.enable_tool_approval',
+    os.environ.get('ENABLE_TOOL_APPROVAL', 'True').lower() == 'true',
+)
+
 CODE_EXECUTION_ENGINE = PersistentConfig(
     'CODE_EXECUTION_ENGINE',
     'code_execution.engine',

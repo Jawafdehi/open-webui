@@ -144,6 +144,8 @@ from open_webui.config import (
     TOOL_SERVER_CONNECTIONS,
     # Terminal Server
     TERMINAL_SERVER_CONNECTIONS,
+    # Tool Approval
+    ENABLE_TOOL_APPROVAL,
     # Code Execution
     ENABLE_CODE_EXECUTION,
     CODE_EXECUTION_ENGINE,
@@ -1231,6 +1233,8 @@ app.state.config.CODE_EXECUTION_JUPYTER_AUTH = CODE_EXECUTION_JUPYTER_AUTH
 app.state.config.CODE_EXECUTION_JUPYTER_AUTH_TOKEN = CODE_EXECUTION_JUPYTER_AUTH_TOKEN
 app.state.config.CODE_EXECUTION_JUPYTER_AUTH_PASSWORD = CODE_EXECUTION_JUPYTER_AUTH_PASSWORD
 app.state.config.CODE_EXECUTION_JUPYTER_TIMEOUT = CODE_EXECUTION_JUPYTER_TIMEOUT
+
+app.state.config.ENABLE_TOOL_APPROVAL = ENABLE_TOOL_APPROVAL
 
 app.state.config.ENABLE_CODE_INTERPRETER = ENABLE_CODE_INTERPRETER
 app.state.config.CODE_INTERPRETER_ENGINE = CODE_INTERPRETER_ENGINE
@@ -2379,6 +2383,7 @@ async def get_app_config(request: Request):
                     'enable_web_search': app.state.config.ENABLE_WEB_SEARCH,
                     'enable_code_execution': app.state.config.ENABLE_CODE_EXECUTION,
                     'enable_code_interpreter': app.state.config.ENABLE_CODE_INTERPRETER,
+                    'enable_tool_approval': app.state.config.ENABLE_TOOL_APPROVAL,
                     'enable_image_generation': app.state.config.ENABLE_IMAGE_GENERATION,
                     'enable_autocomplete_generation': app.state.config.ENABLE_AUTOCOMPLETE_GENERATION,
                     'enable_community_sharing': app.state.config.ENABLE_COMMUNITY_SHARING,
