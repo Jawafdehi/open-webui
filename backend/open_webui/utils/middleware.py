@@ -4572,7 +4572,9 @@ async def streaming_chat_response_handler(response, ctx):
                             direct_tool = tool.get('direct', False)
                             needs_approval = tool.get('needs_approval', False)
 
-                            if needs_approval and event_caller and event_emitter:
+                            tool_approval_enabled = getattr(request.app.state.config, 'ENABLE_TOOL_APPROVAL', True)
+
+                            if needs_approval and tool_approval_enabled and event_caller and event_emitter:
                                 # Update function_call status to awaiting_approval and emit
                                 for item in output:
                                     if item.get('type') == 'function_call' and item.get('call_id') == tool_call_id:
