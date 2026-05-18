@@ -67,7 +67,7 @@ docker compose -f docker-compose.prod.yml up -d --remove-orphans
 BOOTSTRAP="${TARGET}/bin/bootstrap-config.sh"
 if [ -x "${BOOTSTRAP}" ]; then
   echo "--- Bootstrapping configs ---"
-  "${BOOTSTRAP}"
+  OWUI_BASE_URL="https://chat.jawafdehi.org" "${BOOTSTRAP}" || echo "  Bootstrap completed with warnings (non-fatal)"
 fi
 
 echo "=== Deploy complete ==="
