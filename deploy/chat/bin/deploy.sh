@@ -126,7 +126,7 @@ docker pull "jawafdehi/open-webui:${BRANCH}"
 GCP_KEY="/opt/openwebui-secrets/owui-log-writer.credentials.json"
 if [ -f "${GCP_KEY}" ]; then
   echo "--- Authenticating GCP ---"
-  gcloud auth activate-service-account --key-file="${GCP_KEY}" --quiet 2>/dev/null || true
+  gcloud auth application-default login --cred-file="${GCP_KEY}" --quiet 2>/dev/null || true
 fi
 
 # Redeploy
