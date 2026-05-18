@@ -7,6 +7,11 @@ on:
         description: Branch or tag to deploy
         required: false
         default: jawafdehi-main
+      setup_only:
+        description: Run host setup only (create dirs, set permissions, then exit)
+        required: false
+        type: boolean
+        default: false
   push:
     branches:
       - jawafdehi-main
@@ -34,6 +39,18 @@ jobs:
             HostName ${{ secrets.MONAL_SSH_HOST }}
             User ${{ secrets.MONAL_SSH_USER }}
             IdentityFile ~/.ssh/id_rsa
+
+      - name: Host setup
+        if: ${{ inputs.setup_only || github.event_name == 'workflow_dispatch' }}
+        run: |
+          ssh monal-instance1 'sudo mkdir -p /opt/openwebui /opt/openwebui-secrets && sudo chown $USER /opt/openwebui /opt/openwebui-secrets'
+        continue-on-error: true
+
+      - name: Exit after setup
+        if: ${{ inputs.setup_only }}
+        run: |
+          echo "Host setup complete. Exiting."
+          exit 0
 
       - name: Generate deploy timestamp
         id: ts
