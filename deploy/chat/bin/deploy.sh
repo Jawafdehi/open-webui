@@ -62,21 +62,14 @@ docker pull "jawafdehi/open-webui:${BRANCH}"
 echo "--- Redeploying ---"
 cd "${TARGET}"
 docker compose -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || true
-sleep 3
 docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
 # Bootstrap configs if script exists
 BOOTSTRAP="${TARGET}/bin/bootstrap-config.sh"
 if [ -x "${BOOTSTRAP}" ]; then
-  echo "--- Waiting for OpenWebUI to be ready ---"
-  for i in $(seq 1 15); do
-    code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/ 2>/dev/null || echo "000")
-    [ "$code" != "000" ] && break
-    sleep 2
-  done
   echo "--- Bootstrapping configs ---"
   OWUI_API_KEY="$(cat "${SECRETS_DIR}/admin-api-key.txt")" \
-  OWUI_BASE_URL="http://127.0.0.1:8080" \
+  OWUI_BASE_URL="https://chat.jawafdehi.org" \
   "${BOOTSTRAP}" || echo "  Bootstrap completed with warnings (non-fatal)"
 fi
 
