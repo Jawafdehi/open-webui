@@ -76,7 +76,7 @@ if [ -x "${BOOTSTRAP}" ]; then
   done
   echo "--- Bootstrapping configs ---"
   OWUI_API_KEY="$(cat "${SECRETS_DIR}/admin-api-key.txt")" \
-  OWUI_BASE_URL="https://chat.jawafdehi.org" \
+  OWUI_BASE_URL="http://127.0.0.1:8080" \
   "${BOOTSTRAP}" || echo "  Bootstrap completed with warnings (non-fatal)"
 fi
 
