@@ -57,11 +57,11 @@ check_admin() {
 idempotent_action() {
     local label="$1" exists_fn="$2" create_fn="$3"
     echo -n "  ${label} ... "
-    if "$exists_fn" 2>/dev/null; then
+    if eval "$exists_fn" 2>/dev/null; then
         echo "exists (skipping)"
         return 0
     fi
-    if "$create_fn"; then
+    if eval "$create_fn"; then
         echo "created"
         return 0
     fi
