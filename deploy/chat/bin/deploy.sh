@@ -68,14 +68,14 @@ docker compose -f docker-compose.prod.yml up -d --remove-orphans
 BOOTSTRAP="${TARGET}/bin/bootstrap-config.sh"
 if [ -x "${BOOTSTRAP}" ]; then
   echo "--- Waiting for OpenWebUI to be ready ---"
-  for i in $(seq 1 10); do
-    code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/api/v1/tools/ 2>/dev/null || echo "000")
-    [ "$code" = "200" ] && break
-    sleep 3
+  for i in $(seq 1 15); do
+    code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/ 2>/dev/null || echo "000")
+    [ "$code" != "000" ] && break
+    sleep 2
   done
   echo "--- Bootstrapping configs ---"
   OWUI_API_KEY="$(cat "${SECRETS_DIR}/admin-api-key.txt")" \
-  OWUI_BASE_URL="http://127.0.0.1:8080" \
+  OWUI_BASE_URL="https://chat.jawafdehi.org" \
   "${BOOTSTRAP}" || echo "  Bootstrap completed with warnings (non-fatal)"
 fi
 
