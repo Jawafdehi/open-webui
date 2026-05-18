@@ -175,6 +175,10 @@ apply_knowledge() {
                 http_code=$(echo "$upload_resp" | tail -1)
                 if [[ "${http_code}" -ge 200 && "${http_code}" -lt 300 ]]; then
                     file_id=$(echo "$upload_resp" | sed '$d' | jq -r '.id // empty')
+                    if [[ -z "${file_id}" ]]; then
+                        warn "File upload succeeded but no file_id returned for $doc"
+                        continue
+                    fi
                     local add_code
                     add_code=$(curl -s -o /dev/null -w "%{http_code}" \
                         -X POST "${OWUI_API}/knowledge/${kb_id}/file/add" \
