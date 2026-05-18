@@ -155,7 +155,7 @@ apply_knowledge() {
             local doc_path="${kb_dir}/${doc}"
             [ ! -f "$doc_path" ] && warn "Document not found: $doc_path" && continue
 
-            if [ "$DRY_RUN" = "1"" ]; then
+            if [ "$DRY_RUN" = "1" ]; then
                 log "[DRY RUN] Would upload: $doc"
                 continue
             fi
