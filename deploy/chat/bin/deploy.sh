@@ -23,12 +23,8 @@ TARGET="/opt/openwebui"
 BUNDLE="/tmp/openwebui-deploy"
 SECRETS_DIR="/opt/openwebui-secrets"
 
-maybe_sudo() {
-  if [ -w "$(dirname "$1")" ] || [ -w "$1" ] 2>/dev/null; then
-    "$@"
-  else
-    sudo "$@"
-  fi
+cp_sudo() {
+  cp "$@" 2>/dev/null || sudo cp "$@"
 }
 
 ensure_dir() {
@@ -84,7 +80,7 @@ if [ -d "${BUNDLE}/bin" ] && [ -f "${BUNDLE}/docker-compose.prod.yml" ]; then
   echo "--- Preserving secrets ---"
   for f in .env mcp.env; do
     if [ -f "${TARGET}/${f}" ]; then
-      maybe_sudo cp -p "${TARGET}/${f}" "${SECRETS_DIR}/${f}"
+      cp_sudo -p "${TARGET}/${f}" "${SECRETS_DIR}/${f}"
       echo "  Saved ${f} → ${SECRETS_DIR}/${f}"
     elif [ ! -f "${SECRETS_DIR}/${f}" ]; then
       echo "  WARNING: ${f} not found in ${TARGET} or ${SECRETS_DIR} — deploy may fail"
@@ -98,7 +94,7 @@ if [ -d "${BUNDLE}/bin" ] && [ -f "${BUNDLE}/docker-compose.prod.yml" ]; then
   # Restore secrets (if not already provided by external secrets dir)
   for f in .env mcp.env; do
     if [ -f "${SECRETS_DIR}/${f}" ] && [ ! -f "${TARGET}/${f}" ]; then
-      maybe_sudo cp -p "${SECRETS_DIR}/${f}" "${TARGET}/${f}"
+      cp_sudo -p "${SECRETS_DIR}/${f}" "${TARGET}/${f}"
       echo "  Restored ${f} from ${SECRETS_DIR}"
     fi
   done
