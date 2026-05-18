@@ -12,7 +12,7 @@
 #   --include-sources     Fetch detailed source info per case (slower)
 #   --include-entities    Fetch entity details per case
 #   --max-pages N         Maximum pages to fetch (default: unlimited)
-#   --base-url URL        API base URL (default: https://api.jawafdehi.org/api)
+#   --base-url URL        API base URL (default: https://portal.jawafdehi.org/api)
 #   --api-key KEY         API key for token auth (optional, used for draft access)
 #   --resume              Resume from last checkpoint
 #   --help                Show this message
@@ -38,7 +38,7 @@ SEARCH=""
 INCLUDE_SOURCES=false
 INCLUDE_ENTITIES=false
 MAX_PAGES=0
-BASE_URL="${JAWAFDEHI_API_URL:-https://api.jawafdehi.org/api}"
+BASE_URL="${JAWAFDEHI_API_URL:-https://portal.jawafdehi.org/api}"
 API_KEY="${JAWAFDEHI_API_KEY:-}"
 RESUME=false
 PAGE_SIZE=20
