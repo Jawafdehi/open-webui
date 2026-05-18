@@ -32,7 +32,7 @@ done
 
 # Assert required secret files
 echo "--- Checking secrets ---"
-for f in .env mcp.env; do
+for f in .env mcp.env admin-api-key.txt; do
   [ -f "${SECRETS_DIR}/${f}" ] || die "${SECRETS_DIR}/${f} required but missing"
 done
 echo "  Secrets OK."
@@ -68,7 +68,9 @@ docker compose -f docker-compose.prod.yml up -d --remove-orphans
 BOOTSTRAP="${TARGET}/bin/bootstrap-config.sh"
 if [ -x "${BOOTSTRAP}" ]; then
   echo "--- Bootstrapping configs ---"
-  OWUI_BASE_URL="https://chat.jawafdehi.org" "${BOOTSTRAP}" || echo "  Bootstrap completed with warnings (non-fatal)"
+  OWUI_API_KEY="$(cat "${SECRETS_DIR}/admin-api-key.txt")" \
+  OWUI_BASE_URL="https://chat.jawafdehi.org" \
+  "${BOOTSTRAP}" || echo "  Bootstrap completed with warnings (non-fatal)"
 fi
 
 echo "=== Deploy complete ==="
