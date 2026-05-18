@@ -61,6 +61,7 @@ docker pull "jawafdehi/open-webui:${BRANCH}"
 # Redeploy
 echo "--- Redeploying ---"
 cd "${TARGET}"
+docker compose -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || true
 docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
 # Bootstrap configs if script exists
