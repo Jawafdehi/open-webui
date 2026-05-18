@@ -173,7 +173,7 @@ apply_knowledge() {
                     -H "Authorization: Bearer ${OWUI_API_KEY}" \
                     -F "file=@${doc_path}" 2>/dev/null)
                 http_code=$(echo "$upload_resp" | tail -1)
-                if [ "${http_code}" -ge 200 ] 2>/dev/null && [ "${http_code}" -lt 300 ]; then
+                if [[ "${http_code}" -ge 200 && "${http_code}" -lt 300 ]]; then
                     file_id=$(echo "$upload_resp" | sed '$d' | jq -r '.id // empty')
                     local add_code
                     add_code=$(curl -s -o /dev/null -w "%{http_code}" \
@@ -181,7 +181,7 @@ apply_knowledge() {
                         -H "Authorization: Bearer ${OWUI_API_KEY}" \
                         -H "Content-Type: application/json" \
                         -d "{\"file_id\":\"${file_id}\"}" 2>/dev/null)
-                    if [ "${add_code}" -ge 200 ] 2>/dev/null && [ "${add_code}" -lt 300 ]; then
+                    if [[ "${add_code}" -ge 200 && "${add_code}" -lt 300 ]]; then
                         info "  Added to KB (file_id=${file_id})"
                     else
                         warn "Failed to add $doc to KB (HTTP ${add_code})"
