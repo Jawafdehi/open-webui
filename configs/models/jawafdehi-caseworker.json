@@ -1,13 +1,13 @@
 {
-  "id": "caseworker-assistant",
-  "name": "Caseworker Assistant",
+  "id": "jawafdehi-caseworker",
+  "name": "Jawafdehi Caseworker",
   "base_model_id": null,
   "params": {
     "temperature": 0.3,
     "top_p": 0.9
   },
   "meta": {
-    "description": "Jawafdehi caseworker assistant for corruption case analysis, court data, and case documentation",
+    "description": "Jawafdehi caseworker assistant for corruption case analysis, court data lookups, and case documentation with Nepali language support",
     "profile_image_url": "/static/favicon.png",
     "capabilities": {
       "vision": false
