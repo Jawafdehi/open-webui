@@ -52,13 +52,7 @@ rsync -av --no-group \
   --exclude='/data' \
   --exclude='/venv' \
   "${BUNDLE}/" "${TARGET}/"
-echo "  Sync complete."
-
-# GCP ADC for gcplogs (Docker daemon runs as root)
-GCP_KEY="/opt/openwebui-secrets/owui-log-writer.credentials.json"
-if [ -f "${GCP_KEY}" ]; then
-  sudo gcloud auth application-default login --cred-file="${GCP_KEY}" --quiet 2>/dev/null || true
-fi
+  echo "  Sync complete."
 
 # Pull image
 echo "--- Pulling image ---"
