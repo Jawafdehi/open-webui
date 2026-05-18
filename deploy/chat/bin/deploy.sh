@@ -39,7 +39,7 @@ echo "  Secrets OK."
 
 # Verify bundle
 echo "--- Verifying bundle ---"
-for f in docker-compose.prod.yml code/middleware.py code/tools_utils.py code/tools_models.py static/favicon.ico static/logo.png; do
+for f in docker-compose.prod.yml custom/middleware.py custom/tools_utils.py custom/tools_models.py static/favicon.ico static/logo.png; do
   [ -f "${BUNDLE}/${f}" ] || die "missing bundle file: ${f}"
 done
 echo "  Bundle verified."
