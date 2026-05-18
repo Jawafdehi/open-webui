@@ -254,6 +254,21 @@ deploy/chat/configs/
 - `jawafdehi-case-reviewer.md` — Case review skills
 - `jawafdehi-script-generator.md` — Public communication script generation
 
+**Skills source of truth:** Skill content is **authored in** `jawafdehi-meta`
+(at `.agents/skills/{skill-name}/SKILL.md`) and **pulled at deploy time** by
+`deploy.sh`. The deploy script clones jawafdehi-meta, copies the SKILL.md
+files into `configs/knowledge/caseworker/`, and `bootstrap-config.sh` uploads
+them to the OpenWebUI Knowledge Base API.
+
+```
+jawafdehi-meta (author) → deploy.sh (fetch at CI time)
+                         → configs/knowledge/caseworker/ (staging)
+                         → bootstrap-config.sh (upload to OWUI KB API)
+```
+
+This means: to update a skill, edit it in `jawafdehi-meta`; the next CI deploy
+will pick up the change automatically.
+
 **Bootstrap script** at `deploy/chat/bin/bootstrap-config.sh`:
 - Idempotent — safe to run on every deploy
 - Applies models, knowledge base docs, prompts, and groups via OpenWebUI API
