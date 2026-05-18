@@ -8,7 +8,7 @@ This directory stores Jawafdehi-specific OpenWebUI configuration as version-cont
 configs/
 ├── README.md                           # This file
 ├── models/
-│   └── damos-custom-model.json         # Deployed model config (full, not a skeleton)
+│   └── jawafdehi-caseworker.json        # Deployed model config (full, not a skeleton)
 └── knowledge/
     ├── collections.json                # KB collection metadata
     └── caseworker/                     # Skills (pulled from jawafdehi-meta at deploy)
@@ -23,7 +23,7 @@ configs/
 
 ## Model Configuration
 
-`damos-custom-model.json` is a snapshot of the deployed "Damo's custom Model"
+`jawafdehi-caseworker.json` is a snapshot of the deployed "Jawafdehi Caseworker"
 configuration. It includes:
 
 - `base_model_id`: `deepseek-v4-pro`

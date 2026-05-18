@@ -1,6 +1,6 @@
 {
-  "id": "damos-custom-model",
-  "name": "Damo's custom Model",
+  "id": "jawafdehi-caseworker",
+  "name": "Jawafdehi Caseworker",
   "base_model_id": "deepseek-v4-pro",
   "params": {
     "system": "You are an AI Assistant helping corruption caseworkers/researchers at Jawafdehi Initiative to support maintaining corruption cases into the Jawafdehi corruption database for Nepal, which is hosted at jawafdehi.org.",
