@@ -23,7 +23,7 @@ set -euo pipefail
 
 BRANCH="${BRANCH:-jawafdehi-main}"
 TARGET="/opt/openwebui"
-BUNDLE="/tmp/openwebui-deploy"
+BUNDLE="${BUNDLE_DIR:-/tmp/openwebui-deploy}"
 SECRETS_DIR="/opt/openwebui-secrets"
 
 die() { echo "ERROR: $*" >&2; exit 1; }
