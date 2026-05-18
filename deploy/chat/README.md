@@ -84,3 +84,32 @@ ChatUserIdentity.objects.create(owui_user_id="abc123-def456", user=user)
 - OpenWebUI's Custom Headers are the sole source of `X-Jawafdehi-*` headers
 - Service account token is never exposed to end users
 - jawafdehi-api enforces authorization server-side regardless of tool requests
+
+## Config-as-Code Bootstrap
+
+After initial deploy, apply Jawafdehi model presets, Knowledge Base docs,
+and system prompts via the bootstrap script:
+
+```bash
+export OWUI_BASE_URL="https://chat.jawafdehi.org"
+export OWUI_API_KEY="sk-..."  # From Admin Settings → API Keys
+./scripts/bootstrap-config.sh
+```
+
+The script is idempotent — safe to run on every deploy. It reads from `configs/`:
+
+```
+configs/
+├── models/          → Model presets (POST /api/v1/models/create)
+├── prompts/         → System prompts (apply via Admin Settings or Folder API)
+├── knowledge/       → KB collections + Markdown docs (POST /api/v1/knowledge/)
+└── groups/          → User group config (manual apply)
+```
+
+**Dry run:** `OWUI_DRY_RUN=1 ./scripts/bootstrap-config.sh`
+
+### Adding new content
+
+1. Add a Markdown doc to `configs/knowledge/<collection>/`
+2. Add its path to the `documents` array in `configs/knowledge/collections.json`
+3. Re-run `bootstrap-config.sh` — it only uploads new docs
