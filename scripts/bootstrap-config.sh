@@ -548,7 +548,7 @@ case "$MODE" in
     prompts)   apply_prompts ;;
     groups)    apply_groups ;;
     knowledge) apply_all_knowledge ;;
-    *) echo "ERROR: unknown mode '${MODE}'"; exit 1 ;;
+    *) echo "ERROR: unknown mode '${MODE}'" >&2; exit 1 ;;
 esac
 
 echo ""

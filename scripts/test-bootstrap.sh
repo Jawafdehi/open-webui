@@ -5,6 +5,7 @@ set -euo pipefail
 # Tests bootstrap-config.sh against a mock OpenWebUI server.
 # Uses real config files from JAWA-1058 worktree.
 
+SEPARATOR="============================================"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 TMPDIR=$(mktemp -d)
@@ -20,9 +21,9 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "============================================"
+echo "$SEPARATOR"
 echo " Bootstrap Script Integration Tests"
-echo "============================================"
+echo "$SEPARATOR"
 echo ""
 
 # --- Setup: Copy configs from JAWA-1058 worktree ---
@@ -207,8 +208,8 @@ rm -rf "$REPO_ROOT/configs" 2>/dev/null || true
 
 # --- Results ---
 echo ""
-echo "============================================"
+echo "$SEPARATOR"
 echo " Test Results: $PASSED passed, $FAILED failed"
-echo "============================================"
+echo "$SEPARATOR"
 
 exit $FAILED

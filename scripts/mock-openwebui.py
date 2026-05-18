@@ -48,13 +48,16 @@ class MockHandler(BaseHTTPRequestHandler):
             return self.rfile.read(length).decode()
         return ""
 
+    def _is_valid_token(self, token):
+        return token == "test-api-key"
+
     def _check_auth(self):
         auth = self.headers.get("Authorization", "")
         if not auth.startswith("Bearer "):
             self._send_json(401, {"detail": "Not authenticated"})
             return False
         token = auth.split(" ", 1)[1]
-        if token != "test-api-key":
+        if not self._is_valid_token(token):
             self._send_json(401, {"detail": "Invalid token"})
             return False
         return True
@@ -106,6 +109,89 @@ class MockHandler(BaseHTTPRequestHandler):
 
         self._send_json(404, {"detail": f"GET {path} not implemented"})
 
+    def _handle_model_create(self, body):
+        model_id = body.get("id")
+        if model_id in state["models"]:
+            self._send_json(400, {"detail": "Model already exists"})
+            return
+        state["models"][model_id] = {
+            "id": model_id,
+            "name": body.get("name", ""),
+            "base_model_id": body.get("base_model_id"),
+            "params": body.get("params", {}),
+            "meta": body.get("meta", {}),
+            "access_grants": body.get("access_grants", []),
+            "is_active": body.get("is_active", True),
+            "user_id": "mock-user",
+            "created_at": int(time.time()),
+            "updated_at": int(time.time()),
+        }
+        self._send_json(200, state["models"][model_id])
+
+    def _handle_model_update(self, body):
+        model_id = body.get("id")
+        if model_id in state["models"]:
+            acc = body.get("access_grants", [])
+            state["models"][model_id]["access_grants"] = acc
+            state["models"][model_id]["updated_at"] = int(time.time())
+        self._send_json(200, state["models"].get(model_id, body))
+
+    def _handle_prompt_create(self, body):
+        command = body.get("command")
+        if any(p.get("command") == command for p in state["prompts"]):
+            self._send_json(400, {"detail": "COMMAND_TAKEN"})
+            return
+        prompt = {
+            "id": f"prompt-{len(state['prompts'])}",
+            "command": command,
+            "name": body.get("name", ""),
+            "content": body.get("content", ""),
+            "tags": body.get("tags", []),
+            "user_id": "mock-user",
+            "created_at": int(time.time()),
+            "updated_at": int(time.time()),
+        }
+        state["prompts"].append(prompt)
+        self._send_json(200, prompt)
+
+    def _handle_group_create(self, body):
+        name = body.get("name")
+        if any(g.get("name") == name for g in state["groups"]):
+            self._send_json(400, {"detail": "Group exists"})
+            return
+        group = {
+            "id": f"group-{len(state['groups'])}",
+            "name": name,
+            "description": body.get("description", ""),
+            "permissions": body.get("permissions", {}),
+            "user_id": "mock-user",
+            "created_at": int(time.time()),
+            "updated_at": int(time.time()),
+        }
+        state["groups"].append(group)
+        self._send_json(200, group)
+
+    def _handle_knowledge_create(self, body):
+        name = body.get("name")
+        if any(k.get("name") == name for k in state["knowledge"]):
+            self._send_json(400, {"detail": "Knowledge exists"})
+            return
+        kb = {
+            "id": f"kb-{len(state['knowledge'])}",
+            "name": name,
+            "description": body.get("description", ""),
+            "user_id": "mock-user",
+            "access_grants": [],
+            "created_at": int(time.time()),
+            "updated_at": int(time.time()),
+        }
+        state["knowledge"].append(kb)
+        self._send_json(200, kb)
+
+    def _handle_knowledge_file_add(self, body):
+        file_id = body.get("file_id", "unknown")
+        self._send_json(200, {"status": "added", "file_id": file_id})
+
     def do_POST(self):
         if not self._check_auth():
             return
@@ -116,99 +202,18 @@ class MockHandler(BaseHTTPRequestHandler):
         except json.JSONDecodeError:
             body = {}
 
-        # POST /api/v1/models/create
-        if path == "/api/v1/models/create":
-            model_id = body.get("id")
-            if model_id in state["models"]:
-                self._send_json(400, {"detail": "Model already exists"})
-                return
-            state["models"][model_id] = {
-                "id": model_id,
-                "name": body.get("name", ""),
-                "base_model_id": body.get("base_model_id"),
-                "params": body.get("params", {}),
-                "meta": body.get("meta", {}),
-                "access_grants": body.get("access_grants", []),
-                "is_active": body.get("is_active", True),
-                "user_id": "mock-user",
-                "created_at": int(time.time()),
-                "updated_at": int(time.time()),
-            }
-            self._send_json(200, state["models"][model_id])
+        handlers = {
+            "/api/v1/models/create": self._handle_model_create,
+            "/api/v1/models/model/update": self._handle_model_update,
+            "/api/v1/prompts/create": self._handle_prompt_create,
+            "/api/v1/groups/create": self._handle_group_create,
+            "/api/v1/knowledge/create": self._handle_knowledge_create,
+        }
+        if path in handlers:
+            handlers[path](body)
             return
-
-        # POST /api/v1/models/model/update
-        if path == "/api/v1/models/model/update":
-            model_id = body.get("id")
-            if model_id in state["models"]:
-                acc = body.get("access_grants", [])
-                state["models"][model_id]["access_grants"] = acc
-                state["models"][model_id]["updated_at"] = int(time.time())
-            self._send_json(200, state["models"].get(model_id, body))
-            return
-
-        # POST /api/v1/prompts/create
-        if path == "/api/v1/prompts/create":
-            command = body.get("command")
-            if any(p.get("command") == command for p in state["prompts"]):
-                self._send_json(400, {"detail": "COMMAND_TAKEN"})
-                return
-            prompt = {
-                "id": f"prompt-{len(state['prompts'])}",
-                "command": command,
-                "name": body.get("name", ""),
-                "content": body.get("content", ""),
-                "tags": body.get("tags", []),
-                "user_id": "mock-user",
-                "created_at": int(time.time()),
-                "updated_at": int(time.time()),
-            }
-            state["prompts"].append(prompt)
-            self._send_json(200, prompt)
-            return
-
-        # POST /api/v1/groups/create
-        if path == "/api/v1/groups/create":
-            name = body.get("name")
-            if any(g.get("name") == name for g in state["groups"]):
-                self._send_json(400, {"detail": "Group exists"})
-                return
-            group = {
-                "id": f"group-{len(state['groups'])}",
-                "name": name,
-                "description": body.get("description", ""),
-                "permissions": body.get("permissions", {}),
-                "user_id": "mock-user",
-                "created_at": int(time.time()),
-                "updated_at": int(time.time()),
-            }
-            state["groups"].append(group)
-            self._send_json(200, group)
-            return
-
-        # POST /api/v1/knowledge/create
-        if path == "/api/v1/knowledge/create":
-            name = body.get("name")
-            if any(k.get("name") == name for k in state["knowledge"]):
-                self._send_json(400, {"detail": "Knowledge exists"})
-                return
-            kb = {
-                "id": f"kb-{len(state['knowledge'])}",
-                "name": name,
-                "description": body.get("description", ""),
-                "user_id": "mock-user",
-                "access_grants": [],
-                "created_at": int(time.time()),
-                "updated_at": int(time.time()),
-            }
-            state["knowledge"].append(kb)
-            self._send_json(200, kb)
-            return
-
-        # POST /api/v1/knowledge/{id}/file/add
         if "/knowledge/" in path and "/file/add" in path:
-            file_id = body.get("file_id", "unknown")
-            self._send_json(200, {"status": "added", "file_id": file_id})
+            self._handle_knowledge_file_add(body)
             return
 
         self._send_json(404, {"detail": f"POST {path} not implemented"})
