@@ -265,6 +265,75 @@ apply_knowledge() {
     log "Knowledge Base done."
 }
 
+# --- Skills ---
+
+apply_skills() {
+    log "Applying Skills..."
+
+    local skills_file="${CONFIGS_DIR}/skills/skills.json"
+    [ ! -f "$skills_file" ] && warn "No configs/skills/skills.json found" && return
+
+    local skills
+    skills=$(jq -c '.skills[]' "$skills_file")
+
+    # Get existing skills
+    local existing
+    existing=$(_api_call GET "/skills/" "") || err "Failed to list existing skills"
+
+    while IFS= read -r skill; do
+        local skill_id skill_name skill_desc skill_file
+        skill_id=$(echo "$skill" | jq -r '.id')
+        skill_name=$(echo "$skill" | jq -r '.name')
+        skill_desc=$(echo "$skill" | jq -r '.description')
+        skill_file=$(echo "$skill" | jq -r '.file')
+
+        local skill_path="${CONFIGS_DIR}/skills/${skill_file}"
+        if [[ "$skill_file" =~ ^/ ]] || [[ "$skill_file" =~ (^|/)\.\.(/|$) ]]; then
+            warn "Skill file path invalid (must not be absolute or contain '..'): $skill_file"
+            continue
+        fi
+        [ ! -f "$skill_path" ] && warn "Skill file not found: $skill_path" && continue
+
+        local skill_content
+        skill_content=$(cat "$skill_path")
+
+        local existing_id
+        existing_id=$(echo "$existing" | jq -r --arg id "$skill_id" '.[]? | select(.id == $id) | .id // empty' 2>/dev/null || echo "")
+
+        if [ -z "$existing_id" ]; then
+            if [ "$DRY_RUN" = "1" ]; then
+                log "[DRY RUN] Would create skill: $skill_name"
+            else
+                info "Creating skill: $skill_name"
+                jq -n --arg id "$skill_id" --arg name "$skill_name" --arg desc "$skill_desc" --arg content "$skill_content" --argjson tags "$(echo "$skill" | jq '.tags')" \
+                    '{id: $id, name: $name, description: $desc, content: $content, meta: {tags: $tags}}' \
+                    > "${TMPDIR}/skill-create-${skill_id}.json"
+                if ! _api_call POST "/skills/create" "@${TMPDIR}/skill-create-${skill_id}.json"; then
+                    rm -f "${TMPDIR}/skill-create-${skill_id}.json"
+                    err "Failed to create skill $skill_name"
+                fi
+                rm -f "${TMPDIR}/skill-create-${skill_id}.json"
+            fi
+        else
+            info "Skill '$skill_name' exists (id=$existing_id) — updating content"
+            if [ "$DRY_RUN" = "1" ]; then
+                log "[DRY RUN] Would update skill: $skill_name"
+            else
+                jq -n --arg id "$skill_id" --arg name "$skill_name" --arg desc "$skill_desc" --arg content "$skill_content" --argjson tags "$(echo "$skill" | jq '.tags')" \
+                    '{id: $id, name: $name, description: $desc, content: $content, meta: {tags: $tags}}' \
+                    > "${TMPDIR}/skill-update-${skill_id}.json"
+                if ! _api_call POST "/skills/id/${skill_id}/update" "@${TMPDIR}/skill-update-${skill_id}.json"; then
+                    rm -f "${TMPDIR}/skill-update-${skill_id}.json"
+                    err "Failed to update skill $skill_name"
+                fi
+                rm -f "${TMPDIR}/skill-update-${skill_id}.json"
+            fi
+        fi
+    done <<< "$skills"
+
+    log "Skills done."
+}
+
 # --- Main ---
 
 main() {
@@ -292,6 +361,7 @@ main() {
 
     apply_models
     apply_knowledge
+    apply_skills
 
     log "=== Bootstrap complete ==="
     log "Next: configure system prompts via Admin Settings → Models"

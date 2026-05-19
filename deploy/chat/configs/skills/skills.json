@@ -1,0 +1,25 @@
+{
+	"skills": [
+		{
+			"id": "jawafdehi-caseworker",
+			"name": "Jawafdehi Caseworker",
+			"description": "AI assistant for Jawafdehi caseworkers to analyze corruption cases, prepare case documentation, and publish to the Jawafdehi platform",
+			"file": "jawafdehi-caseworker.md",
+			"tags": ["caseworker", "corruption", "nepal"]
+		},
+		{
+			"id": "jawafdehi-case-reviewer",
+			"name": "Jawafdehi Case Reviewer",
+			"description": "Review an already-published Jawafdehi case against the cited CIAA court case and supporting records before approval or revision",
+			"file": "jawafdehi-case-reviewer.md",
+			"tags": ["reviewer", "corruption", "nepal"]
+		},
+		{
+			"id": "jawafdehi-script-generator",
+			"name": "Jawafdehi Script Generator",
+			"description": "Generate professional scripts for use in presentations and social media for sharing Jawafdehi corruption case details with the Nepali public",
+			"file": "jawafdehi-script-generator.md",
+			"tags": ["script", "social-media", "nepal"]
+		}
+	]
+}
