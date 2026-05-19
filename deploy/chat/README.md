@@ -37,6 +37,16 @@ network as OpenWebUI. There is no external path for header spoofing.
 | `nginx/chat.jawafdehi.org.conf` | Nginx reverse proxy config (HTTP → HTTPS → OpenWebUI:8080)                                  |
 | `bin/deploy.sh`                 | Self-contained deploy script (run on monal host; pulls compose + code files from repo)      |
 
+> **Bind-mount override trap.** `docker-compose.prod.yml` bind-mounts
+> `./code/middleware.py` → `/app/backend/open_webui/utils/middleware.py` at
+> runtime. The file at `deploy/chat/code/middleware.py` is what **actually
+> runs** in production — the built-in middleware at
+> `backend/open_webui/utils/middleware.py` is overridden and has **no
+> effect** on `chat.jawafdehi.org`. Any logic that must reach production
+> (MCP tool bridges, file-path enrichment, security filters) MUST be
+> applied to `deploy/chat/code/middleware.py`. Changes to
+> `backend/open_webui/utils/middleware.py` alone will NOT reach production.
+
 ## Quick Start
 
 1. Set up the service account on the jawafdehi-api server:
