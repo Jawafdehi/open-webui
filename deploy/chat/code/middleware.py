@@ -4578,13 +4578,15 @@ async def streaming_chat_response_handler(response, ctx):
                                     if item.get('type') == 'function_call' and item.get('call_id') == tool_call_id:
                                         item['status'] = 'awaiting_approval'
                                         break
-                                await event_emitter({
-                                    'type': 'chat:completion',
-                                    'data': {
-                                        'content': serialize_output(full_output()),
-                                        'output': full_output(),
-                                    },
-                                })
+                                await event_emitter(
+                                    {
+                                        'type': 'chat:completion',
+                                        'data': {
+                                            'content': serialize_output(full_output()),
+                                            'output': full_output(),
+                                        },
+                                    }
+                                )
 
                                 approval_response = await event_caller(
                                     {
@@ -4936,9 +4938,9 @@ async def streaming_chat_response_handler(response, ctx):
                                 if CODE_INTERPRETER_BLOCKED_MODULES:
                                     blocking_code = textwrap.dedent(f"""
                                         import builtins
-    
+
                                         BLOCKED_MODULES = {CODE_INTERPRETER_BLOCKED_MODULES}
-    
+
                                         _real_import = builtins.__import__
                                         async def restricted_import(name, globals=None, locals=None, fromlist=(), level=0):
                                             if name.split('.')[0] in BLOCKED_MODULES:
@@ -4948,7 +4950,7 @@ async def streaming_chat_response_handler(response, ctx):
                                                         f"Direct import of module {{name}} is restricted."
                                                     )
                                             return _real_import(name, globals, locals, fromlist, level)
-    
+
                                         builtins.__import__ = restricted_import
                                     """)
                                     code = blocking_code + '\n' + code
