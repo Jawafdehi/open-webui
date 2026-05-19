@@ -70,6 +70,7 @@ from open_webui.utils.files import (
 from open_webui.models.users import UserModel
 from open_webui.models.functions import Functions
 from open_webui.models.models import Models
+from open_webui.models.files import Files
 
 from open_webui.retrieval.utils import get_sources_from_items
 
@@ -2624,6 +2625,17 @@ async def process_chat_payload(request, form_data, user, metadata, model):
         # Remove duplicate files based on their content
         files = list({json.dumps(f, sort_keys=True): f for f in files}.values())
 
+        # Enrich file metadata with disk path so MCP tools (e.g.
+        # jawafdehi_upload_document_source) can resolve file locations.
+        for file_item in files:
+            if file_item.get('type') in ('file', None) and file_item.get('id'):
+                try:
+                    db_file = await Files.get_file_by_id(file_item['id'])
+                    if db_file and db_file.path:
+                        file_item['path'] = db_file.path
+                except Exception:
+                    pass
+
     metadata = {
         **metadata,
         'model_id': form_data.get('model'),
@@ -4588,6 +4600,22 @@ async def streaming_chat_response_handler(response, ctx):
                                     )
 
                                 else:
+                                    # Resolve file IDs to disk paths for
+                                    # jawafdehi_upload_document_source so the
+                                    # MCP tool can read uploaded chat files.
+                                    if (
+                                        tool_function_name == 'jawafdehi_upload_document_source'
+                                        and 'file_path' in tool_function_params
+                                    ):
+                                        fp = tool_function_params['file_path']
+                                        if '/' not in fp and '\\' not in fp:
+                                            try:
+                                                db_file = await Files.get_file_by_id(fp)
+                                                if db_file and db_file.path:
+                                                    tool_function_params['file_path'] = db_file.path
+                                            except Exception:
+                                                pass
+
                                     tool_function = await get_updated_tool_function(
                                         function=tool['callable'],
                                         extra_params={

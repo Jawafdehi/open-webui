@@ -70,6 +70,7 @@ from open_webui.utils.files import (
 from open_webui.models.users import UserModel
 from open_webui.models.functions import Functions
 from open_webui.models.models import Models
+from open_webui.models.files import Files
 
 from open_webui.retrieval.utils import get_sources_from_items
 
@@ -1709,6 +1710,33 @@ async def get_image_urls(delta_images, request, metadata, user) -> list[str]:
     return image_urls
 
 
+async def _resolve_file_paths(files_with_urls: list) -> None:
+    """Resolve DB file paths for files missing the `path` field (in-place)."""
+    for file_item in files_with_urls:
+        if 'path' not in file_item and file_item.get('id'):
+            try:
+                db_file = await Files.get_file_by_id(file_item['id'])
+                if db_file and db_file.path:
+                    file_item['path'] = db_file.path
+            except Exception:
+                pass
+
+
+def _format_file_tag(file: dict) -> str:
+    attrs = f'type="{file.get("type", "file")}" url="{file["url"]}"'
+    if file.get('content_type'):
+        attrs += f' content_type="{file["content_type"]}"'
+    if file.get('name'):
+        attrs += f' name="{file["name"]}"'
+    file_id = file.get('id', '')
+    if file_id:
+        attrs += f' id="{file_id}"'
+    file_path = file.get('path', '')
+    if file_path:
+        attrs += f' path="{file_path}"'
+    return f'<file {attrs}/>'
+
+
 async def add_file_context(messages: list, chat_id: str, user) -> list:
     """
     Add file URLs to messages for native function calling.
@@ -1722,14 +1750,6 @@ async def add_file_context(messages: list, chat_id: str, user) -> list:
 
     history = chat.chat.get('history', {})
     stored_messages = get_message_list(history.get('messages', {}), history.get('currentId'))
-
-    def format_file_tag(file):
-        attrs = f'type="{file.get("type", "file")}" url="{file["url"]}"'
-        if file.get('content_type'):
-            attrs += f' content_type="{file["content_type"]}"'
-        if file.get('name'):
-            attrs += f' name="{file["name"]}"'
-        return f'<file {attrs}/>'
 
     # Pair only user-role messages from both lists to avoid misalignment.
     # After process_messages_with_output(), assistant messages with tool calls
@@ -1749,7 +1769,11 @@ async def add_file_context(messages: list, chat_id: str, user) -> list:
         if not files_with_urls:
             continue
 
-        file_tags = [format_file_tag(file) for file in files_with_urls]
+        # Resolve file paths from DB so the model can use
+        # jawafdehi_upload_document_source with real file paths.
+        await _resolve_file_paths(files_with_urls)
+
+        file_tags = [_format_file_tag(file) for file in files_with_urls]
         file_context = '<attached_files>\n' + '\n'.join(file_tags) + '\n</attached_files>\n\n'
 
         content = message.get('content', '')
