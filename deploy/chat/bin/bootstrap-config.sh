@@ -288,6 +288,10 @@ apply_skills() {
         skill_file=$(echo "$skill" | jq -r '.file')
 
         local skill_path="${CONFIGS_DIR}/skills/${skill_file}"
+        if [[ "$skill_file" =~ ^/ ]] || [[ "$skill_file" =~ (^|/)\.\.(/|$) ]]; then
+            warn "Skill file path invalid (must not be absolute or contain '..'): $skill_file"
+            continue
+        fi
         [ ! -f "$skill_path" ] && warn "Skill file not found: $skill_path" && continue
 
         local skill_content
@@ -304,7 +308,10 @@ apply_skills() {
                 jq -n --arg id "$skill_id" --arg name "$skill_name" --arg desc "$skill_desc" --arg content "$skill_content" --argjson tags "$(echo "$skill" | jq '.tags')" \
                     '{id: $id, name: $name, description: $desc, content: $content, meta: {tags: $tags}}' \
                     > "${TMPDIR}/skill-create-${skill_id}.json"
-                _api_call POST "/skills/create" "@${TMPDIR}/skill-create-${skill_id}.json" || warn "Failed to create skill $skill_name"
+                if ! _api_call POST "/skills/create" "@${TMPDIR}/skill-create-${skill_id}.json"; then
+                    rm -f "${TMPDIR}/skill-create-${skill_id}.json"
+                    die "Failed to create skill $skill_name"
+                fi
                 rm -f "${TMPDIR}/skill-create-${skill_id}.json"
             fi
         else
@@ -315,7 +322,10 @@ apply_skills() {
                 jq -n --arg id "$skill_id" --arg name "$skill_name" --arg desc "$skill_desc" --arg content "$skill_content" --argjson tags "$(echo "$skill" | jq '.tags')" \
                     '{id: $id, name: $name, description: $desc, content: $content, meta: {tags: $tags}}' \
                     > "${TMPDIR}/skill-update-${skill_id}.json"
-                _api_call POST "/skills/id/${skill_id}/update" "@${TMPDIR}/skill-update-${skill_id}.json" || warn "Failed to update skill $skill_name"
+                if ! _api_call POST "/skills/id/${skill_id}/update" "@${TMPDIR}/skill-update-${skill_id}.json"; then
+                    rm -f "${TMPDIR}/skill-update-${skill_id}.json"
+                    die "Failed to update skill $skill_name"
+                fi
                 rm -f "${TMPDIR}/skill-update-${skill_id}.json"
             fi
         fi

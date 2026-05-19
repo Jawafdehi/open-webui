@@ -71,7 +71,7 @@ if [ -x "${BOOTSTRAP}" ]; then
   SKILLS_DIR="${TARGET}/configs/skills"
   mkdir -p "${SKILLS_DIR}"
   git clone --depth 1 https://github.com/Jawafdehi/jawafdehi-meta /tmp/jawafdehi-meta-fetch 2>/dev/null || true
-  for skill in jawafdehi-caseworker jawafdehi-case-reviewer jawafdehi-script-generator; do
+  for skill in $(jq -r '.skills[].id' "${TARGET}/configs/skills/skills.json"); do
     if [ -f "/tmp/jawafdehi-meta-fetch/.kiro/skills/${skill}/SKILL.md" ]; then
       cp "/tmp/jawafdehi-meta-fetch/.kiro/skills/${skill}/SKILL.md" "${SKILLS_DIR}/${skill}.md"
     fi
