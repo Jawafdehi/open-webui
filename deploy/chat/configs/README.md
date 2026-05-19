@@ -8,10 +8,12 @@ This directory stores Jawafdehi-specific OpenWebUI configuration as version-cont
 configs/
 ├── README.md                           # This file
 ├── models/
-│   └── jawafdehi-caseworker.json        # Deployed model config (full, not a skeleton)
+│   └── jawafdehi-caseworker.json       # Deployed model config (full, not a skeleton)
+├── skills/
+│   ├── skills.json                     # Skill manifest (id, name, description, tags)
+│   └── *.md                            # Skills (pulled from jawafdehi-meta at deploy)
 └── knowledge/
-    ├── collections.json                # KB collection metadata
-    └── caseworker/                     # Skills (pulled from jawafdehi-meta at deploy)
+    └── collections.json                # KB collection metadata
 ```
 
 ## How it works
@@ -34,6 +36,21 @@ configuration. It includes:
 
 This is a complete model config — not a skeleton. It can be applied directly
 by the bootstrap script with no manual steps needed.
+
+## Skills
+
+Caseworker skills are loaded as native OpenWebUI Skills (not Knowledge Base).
+Skill definitions live in `skills/skills.json`, and the Markdown content files
+are pulled from `jawafdehi-meta/.kiro/skills/` at deploy time.
+
+The `apply_skills()` function in the bootstrap script:
+
+1. Reads `skills.json` for registered skill metadata
+2. Checks which skills already exist via `GET /api/v1/skills/`
+3. Creates missing skills via `POST /api/v1/skills/create`
+4. Updates existing skills via `POST /api/v1/skills/id/{id}/update`
+
+This ensures skill content stays current across deploys.
 
 ## Adding Knowledge Base docs
 

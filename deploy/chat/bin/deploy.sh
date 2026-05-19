@@ -68,7 +68,7 @@ docker compose -f docker-compose.prod.yml up -d --remove-orphans
 BOOTSTRAP="${TARGET}/bin/bootstrap-config.sh"
 if [ -x "${BOOTSTRAP}" ]; then
   echo "--- Fetching caseworker skills from jawafdehi-meta ---"
-  SKILLS_DIR="${TARGET}/configs/knowledge/caseworker"
+  SKILLS_DIR="${TARGET}/configs/skills"
   mkdir -p "${SKILLS_DIR}"
   git clone --depth 1 https://github.com/Jawafdehi/jawafdehi-meta /tmp/jawafdehi-meta-fetch 2>/dev/null || true
   for skill in jawafdehi-caseworker jawafdehi-case-reviewer jawafdehi-script-generator; do
