@@ -70,6 +70,7 @@ from open_webui.utils.files import (
 from open_webui.models.users import UserModel
 from open_webui.models.functions import Functions
 from open_webui.models.models import Models
+from open_webui.models.files import Files
 
 from open_webui.retrieval.utils import get_sources_from_items
 
@@ -1729,6 +1730,12 @@ async def add_file_context(messages: list, chat_id: str, user) -> list:
             attrs += f' content_type="{file["content_type"]}"'
         if file.get('name'):
             attrs += f' name="{file["name"]}"'
+        file_id = file.get('id', '')
+        if file_id:
+            attrs += f' id="{file_id}"'
+        file_path = file.get('path', '')
+        if file_path:
+            attrs += f' path="{file_path}"'
         return f'<file {attrs}/>'
 
     # Pair only user-role messages from both lists to avoid misalignment.
@@ -1748,6 +1755,17 @@ async def add_file_context(messages: list, chat_id: str, user) -> list:
         ]
         if not files_with_urls:
             continue
+
+        # Resolve file paths from DB so the model can use
+        # jawafdehi_upload_document_source with real file paths.
+        for file_item in files_with_urls:
+            if 'path' not in file_item and file_item.get('id'):
+                try:
+                    db_file = await Files.get_file_by_id(file_item['id'])
+                    if db_file and db_file.path:
+                        file_item['path'] = db_file.path
+                except Exception:
+                    pass
 
         file_tags = [format_file_tag(file) for file in files_with_urls]
         file_context = '<attached_files>\n' + '\n'.join(file_tags) + '\n</attached_files>\n\n'
