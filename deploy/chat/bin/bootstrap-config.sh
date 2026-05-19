@@ -112,8 +112,6 @@ apply_models() {
 
     verify_model_create_permission
 
-    local existing
-    existing=$(_api_call GET "/models" "" 2>/dev/null || echo '{"data":[]}')
     local model_dir="${CONFIGS_DIR}/models"
 
     [ ! -d "$model_dir" ] && warn "No configs/models/ directory found" && return
@@ -126,26 +124,45 @@ apply_models() {
 
         [ -z "$model_id" ] && warn "Skipping $model_file: no 'id' field" && continue
 
-        # Check if model already exists
-        # Response uses .data (OpenWebUI /api/v1/models format), not .items
-        if echo "$existing" | jq -e --arg id "$model_id" '(.data // .items // []) | any(.id == $id)' > /dev/null 2>&1; then
-            info "Model '$model_id' already exists — skipping"
-            continue
-        fi
-
         if [ "$DRY_RUN" = "1" ]; then
-            log "[DRY RUN] Would create model: $model_id"
+            log "[DRY RUN] Would replace model: $model_id"
             continue
         fi
 
+        # Delete existing model first (ignore 404 if not found).
+        # OpenWebUI returns 401 with NOT_FOUND detail when the model doesn't exist.
+        local del_http del_body
+        del_body=$(curl -s -w "\n%{http_code}" \
+            -X POST "${OWUI_API}/models/model/delete" \
+            -H "Authorization: Bearer ${OWUI_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: ${OWUI_API_KEY}" \
+            -d "{\"id\":\"${model_id}\"}" 2>/dev/null)
+        del_http=$(echo "$del_body" | tail -1)
+        if [ "$del_http" -ge 200 ] 2>/dev/null && [ "$del_http" -lt 300 ]; then
+            info "  Deleted existing model '$model_id'"
+        fi
+
+        # Create (or recreate) the model
         info "Creating model: $model_id"
-        if _api_call POST "/models/create" "$model_data"; then
+        local create_body create_http
+        create_body=$(curl -s -w "\n%{http_code}" \
+            -X POST "${OWUI_API}/models/create" \
+            -H "Authorization: Bearer ${OWUI_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: ${OWUI_API_KEY}" \
+            -d "$model_data" 2>/dev/null)
+        create_http=$(echo "$create_body" | tail -1)
+
+        if [ "$create_http" -ge 200 ] 2>/dev/null && [ "$create_http" -lt 300 ]; then
             info "  Model '$model_id' created successfully."
         else
-            warn "Failed to create model $model_id"
-            warn "  If HTTP 401: the API key may not have admin role or workspace.models"
-            warn "  permission. Check https://chat.jawafdehi.org/admin → Settings."
-            warn "  If HTTP 502/503: the backend may still be starting. Retry in a moment."
+            local detail
+            detail=$(echo "$create_body" | sed '$d' | jq -r '.detail // empty' 2>/dev/null || echo "")
+            warn "Failed to create model $model_id (HTTP $create_http)"
+            [ -n "$detail" ] && warn "  Response: $detail"
+            warn "  If HTTP 401: verify API key is admin in OpenWebUI Admin Settings."
+            warn "  If HTTP 502/503: backend may still be starting. Retry in a moment."
         fi
     done
 
