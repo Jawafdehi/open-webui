@@ -22,12 +22,8 @@
 			"status_updates": true,
 			"builtin_tools": true
 		},
-		"toolIds": [
-			"server:mcp:jawafdehi"
-		],
-		"skillIds": [
-			"jawafdehi-caseworker"
-		]
+		"toolIds": ["server:mcp:jawafdehi"],
+		"skillIds": ["jawafdehi-caseworker"]
 	},
 	"is_active": true
 }

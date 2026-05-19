@@ -4,7 +4,7 @@
 	--jawafdehi-dark: #171717;
 }
 
-header nav a[href="/"],
+header nav a[href='/'],
 header nav span:first-child {
 	display: inline-flex;
 	align-items: center;
