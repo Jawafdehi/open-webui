@@ -315,7 +315,7 @@ async def upload_file_handler(
             else:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=ERROR_MESSAGES.DEFAULT('Error uploading file'),
+                    detail=ERROR_MESSAGES.DEFAULT(f'Error uploading file: failed to save {filename}'),
                 )
 
     except HTTPException as e:
@@ -324,7 +324,7 @@ async def upload_file_handler(
         log.exception(e)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ERROR_MESSAGES.DEFAULT('Error uploading file'),
+            detail=ERROR_MESSAGES.DEFAULT(f'Error uploading file: {e}'),
         )
 
 
