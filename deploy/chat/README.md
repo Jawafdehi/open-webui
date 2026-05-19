@@ -25,27 +25,29 @@ network as OpenWebUI. There is no external path for header spoofing.
 
 ## Files
 
-| File | Purpose |
-|------|---------|
-| `docker-compose.yml` | Reference stack (builds from `jawafdehi-main` source). Suitable for development. |
-| `docker-compose.prod.yml` | Production deployment config (pre-built images, MCP, GCP Cloud Logging). Single-file stack. |
-| `openwebui/tools-config.json` | OpenWebUI External Tools MCP server config |
-| `mcp.env.example` | Template for jawafdehi-mcp environment variables |
-| `.env.example` | Template for OpenWebUI OAUTH environment variables |
-| `code/` | Python overrides bind-mounted in production (middleware, tools) |
-| `static/` | Jawafdehi branding assets (favicon, logo, splash screens) |
-| `nginx/chat.jawafdehi.org.conf` | Nginx reverse proxy config (HTTP → HTTPS → OpenWebUI:8080) |
-| `bin/deploy.sh` | Self-contained deploy script (run on monal host; pulls compose + code files from repo) |
+| File                            | Purpose                                                                                     |
+| ------------------------------- | ------------------------------------------------------------------------------------------- |
+| `docker-compose.yml`            | Reference stack (builds from `jawafdehi-main` source). Suitable for development.            |
+| `docker-compose.prod.yml`       | Production deployment config (pre-built images, MCP, GCP Cloud Logging). Single-file stack. |
+| `openwebui/tools-config.json`   | OpenWebUI External Tools MCP server config                                                  |
+| `mcp.env.example`               | Template for jawafdehi-mcp environment variables                                            |
+| `.env.example`                  | Template for OpenWebUI OAUTH environment variables                                          |
+| `code/`                         | Python overrides bind-mounted in production (middleware, tools)                             |
+| `static/`                       | Jawafdehi branding assets (favicon, logo, splash screens)                                   |
+| `nginx/chat.jawafdehi.org.conf` | Nginx reverse proxy config (HTTP → HTTPS → OpenWebUI:8080)                                  |
+| `bin/deploy.sh`                 | Self-contained deploy script (run on monal host; pulls compose + code files from repo)      |
 
 ## Quick Start
 
 1. Set up the service account on the jawafdehi-api server:
+
    ```bash
    python manage.py migrate
    python manage.py setup_chat_service_account
    ```
 
 2. Copy the environment template and fill in credentials:
+
    ```bash
    cp mcp.env.example mcp.env
    # Edit mcp.env — set JAWAFDEHI_API_TOKEN from step 1
@@ -53,6 +55,7 @@ network as OpenWebUI. There is no external path for header spoofing.
 
 3. Add the `jawafdehi-mcp` service definition from `docker-compose.yml`
    to the existing OpenWebUI docker-compose, then restart:
+
    ```bash
    docker compose up -d
    ```
