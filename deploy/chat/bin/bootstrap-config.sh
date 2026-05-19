@@ -278,7 +278,7 @@ apply_skills() {
 
     # Get existing skills
     local existing
-    existing=$(_api_call GET "/skills/" "" 2>/dev/null || echo '[]')
+    existing=$(_api_call GET "/skills/" "") || err "Failed to list existing skills"
 
     while IFS= read -r skill; do
         local skill_id skill_name skill_desc skill_file
@@ -310,7 +310,7 @@ apply_skills() {
                     > "${TMPDIR}/skill-create-${skill_id}.json"
                 if ! _api_call POST "/skills/create" "@${TMPDIR}/skill-create-${skill_id}.json"; then
                     rm -f "${TMPDIR}/skill-create-${skill_id}.json"
-                    die "Failed to create skill $skill_name"
+                    err "Failed to create skill $skill_name"
                 fi
                 rm -f "${TMPDIR}/skill-create-${skill_id}.json"
             fi
@@ -324,7 +324,7 @@ apply_skills() {
                     > "${TMPDIR}/skill-update-${skill_id}.json"
                 if ! _api_call POST "/skills/id/${skill_id}/update" "@${TMPDIR}/skill-update-${skill_id}.json"; then
                     rm -f "${TMPDIR}/skill-update-${skill_id}.json"
-                    die "Failed to update skill $skill_name"
+                    err "Failed to update skill $skill_name"
                 fi
                 rm -f "${TMPDIR}/skill-update-${skill_id}.json"
             fi
