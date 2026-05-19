@@ -79,9 +79,15 @@ if [ -x "${BOOTSTRAP}" ]; then
   rm -rf /tmp/jawafdehi-meta-fetch
 
   echo "--- Bootstrapping configs ---"
+  set +e
   OWUI_API_KEY="$(cat "${SECRETS_DIR}/admin-api-key.txt")" \
   OWUI_BASE_URL="https://chat.jawafdehi.org" \
-  "${BOOTSTRAP}" || echo "  Bootstrap completed with warnings (non-fatal)"
+  "${BOOTSTRAP}"
+  BOOTSTRAP_EXIT=$?
+  set -e
+  if [ $BOOTSTRAP_EXIT -ne 0 ]; then
+    die "Bootstrap failed with exit code ${BOOTSTRAP_EXIT}. Model creation returned HTTP 401 — verify the API key in ${SECRETS_DIR}/admin-api-key.txt belongs to an admin user or a user with the workspace.models permission. See bootstrap output above for details."
+  fi
 fi
 
 echo "=== Deploy complete ==="

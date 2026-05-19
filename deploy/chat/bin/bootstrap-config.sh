@@ -37,7 +37,7 @@ _api_call() {
     local method="$1" path="$2" data="${3:-}"
     local url="${OWUI_API}${path}"
     local curl_args=(-s -w "\n%{http_code}" -H "Authorization: Bearer ${OWUI_API_KEY}")
-    curl_args+=(-H "Content-Type: application/json")
+    curl_args+=(-H "Content-Type: application/json" -H "x-api-key: ${OWUI_API_KEY}")
 
     if [ "$method" = "GET" ]; then
         curl_args+=(-X GET)
@@ -61,6 +61,10 @@ _api_call() {
 
     if [ "$http_code" -ge 400 ]; then
         warn "$method $path → HTTP $http_code"
+        # Surface response body detail for common failure modes
+        local detail
+        detail=$(echo "$body" | jq -r '.detail // empty' 2>/dev/null || echo "")
+        [ -n "$detail" ] && warn "  Response: $detail"
         return 1
     fi
 
@@ -68,10 +72,44 @@ _api_call() {
     return 0
 }
 
+# --- Permission check ---
+
+verify_model_create_permission() {
+    # Call models endpoint with GET to extract user info implicitly;
+    # a 401 here signals the key is invalid entirely.
+    # Then we attempt a lightweight POST to check workspace.models permission.
+    local user_info http_code
+    user_info=$(curl -s -w "\n%{http_code}" \
+        -X GET "${OWUI_API}/users/user/info" \
+        -H "Authorization: Bearer ${OWUI_API_KEY}" \
+        -H "Content-Type: application/json" 2>/dev/null)
+    http_code=$(echo "$user_info" | tail -1)
+
+    if [ "$http_code" -eq 401 ]; then
+        err "API key rejected (HTTP 401) — verify ${SECRETS_DIR:-/opt/openwebui-secrets}/admin-api-key.txt contains a valid OpenWebUI admin API key (must start with 'sk-'). If the key is correct, check that the associated user has admin role or workspace.models permission in OpenWebUI Admin Settings."
+    fi
+
+    # Attempt a read on models to verify basic access
+    local model_check
+    model_check=$(curl -s -w "\n%{http_code}" \
+        -X GET "${OWUI_API}/models/" \
+        -H "Authorization: Bearer ${OWUI_API_KEY}" \
+        -H "Content-Type: application/json" 2>/dev/null)
+    http_code=$(echo "$model_check" | tail -1)
+
+    if [ "$http_code" -eq 401 ]; then
+        err "API key rejected on models list (HTTP 401) — your API key is valid for basic endpoints but may lack permissions for model operations. Ensure the user has admin role or workspace.models permission."
+    fi
+
+    info "API key accepted for model operations."
+}
+
 # --- Model presets ---
 
 apply_models() {
     log "Applying model presets..."
+
+    verify_model_create_permission
 
     local existing
     existing=$(_api_call GET "/models/" "" 2>/dev/null || echo "[]")
@@ -99,7 +137,16 @@ apply_models() {
         fi
 
         info "Creating model: $model_id"
-        _api_call POST "/models/create" "$model_data" || warn "Failed to create model $model_id"
+        if _api_call POST "/models/create" "$model_data"; then
+            info "  Model '$model_id' created successfully."
+        else
+            warn "Failed to create model $model_id"
+            warn "  This is typically a permissions issue. The API key must belong to an"
+            warn "  admin user or a user with the 'workspace.models' permission."
+            warn "  Fix: Open https://chat.jawafdehi.org/admin → Settings → API Keys"
+            warn "  and ensure the key in admin-api-key.txt is for an admin user,"
+            warn "  or grant 'workspace.models' permission to this user's group."
+        fi
     done
 
     log "Model presets done."
