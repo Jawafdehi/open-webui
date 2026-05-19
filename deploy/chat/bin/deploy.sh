@@ -71,11 +71,18 @@ if [ -x "${BOOTSTRAP}" ]; then
   SKILLS_DIR="${TARGET}/configs/skills"
   mkdir -p "${SKILLS_DIR}"
   git clone --depth 1 https://github.com/Jawafdehi/jawafdehi-meta /tmp/jawafdehi-meta-fetch 2>/dev/null || true
-  for skill in $(jq -r '.skills[].id' "${TARGET}/configs/skills/skills.json"); do
-    if [ -f "/tmp/jawafdehi-meta-fetch/.kiro/skills/${skill}/SKILL.md" ]; then
-      cp "/tmp/jawafdehi-meta-fetch/.kiro/skills/${skill}/SKILL.md" "${SKILLS_DIR}/${skill}.md"
-    fi
-  done
+  # Copy skills manifest (source of truth) and SKILL.md files from jawafdehi-meta
+  META_SKILLS="/tmp/jawafdehi-meta-fetch/.kiro/skills"
+  if [ -f "${META_SKILLS}/skills.json" ]; then
+    cp "${META_SKILLS}/skills.json" "${SKILLS_DIR}/skills.json"
+    for skill in $(jq -r '.skills[].id' "${META_SKILLS}/skills.json"); do
+      if [ -f "${META_SKILLS}/${skill}/SKILL.md" ]; then
+        cp "${META_SKILLS}/${skill}/SKILL.md" "${SKILLS_DIR}/${skill}.md"
+      fi
+    done
+  else
+    echo "  !! skills.json not found in jawafdehi-meta — skipping skill import"
+  fi
   rm -rf /tmp/jawafdehi-meta-fetch
 
   echo "--- Bootstrapping configs ---"
