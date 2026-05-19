@@ -159,10 +159,10 @@ apply_models() {
         else
             local detail
             detail=$(echo "$create_body" | sed '$d' | jq -r '.detail // empty' 2>/dev/null || echo "")
-            warn "Failed to create model $model_id (HTTP $create_http)"
             [ -n "$detail" ] && warn "  Response: $detail"
             warn "  If HTTP 401: verify API key is admin in OpenWebUI Admin Settings."
             warn "  If HTTP 502/503: backend may still be starting. Retry in a moment."
+            err "Failed to create model $model_id (HTTP $create_http)"
         fi
     done
 
