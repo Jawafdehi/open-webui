@@ -86,7 +86,7 @@ if [ -x "${BOOTSTRAP}" ]; then
   BOOTSTRAP_EXIT=$?
   set -e
   if [ $BOOTSTRAP_EXIT -ne 0 ]; then
-    die "Bootstrap failed with exit code ${BOOTSTRAP_EXIT}. Model creation returned HTTP 401 — verify the API key in ${SECRETS_DIR}/admin-api-key.txt belongs to an admin user or a user with the workspace.models permission. See bootstrap output above for details."
+    die "Bootstrap failed with exit code ${BOOTSTRAP_EXIT}. See bootstrap output above for details. Common causes: invalid API key (check ${SECRETS_DIR}/admin-api-key.txt), backend not ready (retry), or KB document upload failure."
   fi
 fi
 

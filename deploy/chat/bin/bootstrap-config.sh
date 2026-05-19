@@ -193,7 +193,7 @@ apply_knowledge() {
         col_desc=$(echo "$col" | jq -r '.description')
 
         local kb_id
-        kb_id=$(echo "$existing" | jq -r --arg name "$col_name" '.items[]? | select(.name == $name) | .id // empty' 2>/dev/null || echo "")
+        kb_id=$(echo "$existing" | jq -r --arg name "$col_name" '[.items[]? | select(.name == $name) | .id // empty] | first' 2>/dev/null || echo "")
 
         if [ -z "$kb_id" ]; then
             if [ "$DRY_RUN" = "1" ]; then
