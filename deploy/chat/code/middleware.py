@@ -4578,13 +4578,15 @@ async def streaming_chat_response_handler(response, ctx):
                                     if item.get('type') == 'function_call' and item.get('call_id') == tool_call_id:
                                         item['status'] = 'awaiting_approval'
                                         break
-                                await event_emitter({
-                                    'type': 'chat:completion',
-                                    'data': {
-                                        'content': serialize_output(full_output()),
-                                        'output': full_output(),
-                                    },
-                                })
+                                await event_emitter(
+                                    {
+                                        'type': 'chat:completion',
+                                        'data': {
+                                            'content': serialize_output(full_output()),
+                                            'output': full_output(),
+                                        },
+                                    }
+                                )
 
                                 approval_response = await event_caller(
                                     {
