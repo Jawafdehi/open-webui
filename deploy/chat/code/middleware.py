@@ -1722,6 +1722,21 @@ async def _resolve_file_paths(files_with_urls: list) -> None:
                 pass
 
 
+def _format_file_tag(file: dict) -> str:
+    attrs = f'type="{file.get("type", "file")}" url="{file["url"]}"'
+    if file.get('content_type'):
+        attrs += f' content_type="{file["content_type"]}"'
+    if file.get('name'):
+        attrs += f' name="{file["name"]}"'
+    file_id = file.get('id', '')
+    if file_id:
+        attrs += f' id="{file_id}"'
+    file_path = file.get('path', '')
+    if file_path:
+        attrs += f' path="{file_path}"'
+    return f'<file {attrs}/>'
+
+
 async def add_file_context(messages: list, chat_id: str, user) -> list:
     """
     Add file URLs to messages for native function calling.
@@ -1735,20 +1750,6 @@ async def add_file_context(messages: list, chat_id: str, user) -> list:
 
     history = chat.chat.get('history', {})
     stored_messages = get_message_list(history.get('messages', {}), history.get('currentId'))
-
-    def format_file_tag(file):
-        attrs = f'type="{file.get("type", "file")}" url="{file["url"]}"'
-        if file.get('content_type'):
-            attrs += f' content_type="{file["content_type"]}"'
-        if file.get('name'):
-            attrs += f' name="{file["name"]}"'
-        file_id = file.get('id', '')
-        if file_id:
-            attrs += f' id="{file_id}"'
-        file_path = file.get('path', '')
-        if file_path:
-            attrs += f' path="{file_path}"'
-        return f'<file {attrs}/>'
 
     # Pair only user-role messages from both lists to avoid misalignment.
     # After process_messages_with_output(), assistant messages with tool calls
@@ -1772,7 +1773,7 @@ async def add_file_context(messages: list, chat_id: str, user) -> list:
         # jawafdehi_upload_document_source with real file paths.
         await _resolve_file_paths(files_with_urls)
 
-        file_tags = [format_file_tag(file) for file in files_with_urls]
+        file_tags = [_format_file_tag(file) for file in files_with_urls]
         file_context = '<attached_files>\n' + '\n'.join(file_tags) + '\n</attached_files>\n\n'
 
         content = message.get('content', '')
