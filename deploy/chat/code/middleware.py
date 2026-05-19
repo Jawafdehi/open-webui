@@ -1710,6 +1710,18 @@ async def get_image_urls(delta_images, request, metadata, user) -> list[str]:
     return image_urls
 
 
+async def _resolve_file_paths(files_with_urls: list) -> None:
+    """Resolve DB file paths for files missing the `path` field (in-place)."""
+    for file_item in files_with_urls:
+        if 'path' not in file_item and file_item.get('id'):
+            try:
+                db_file = await Files.get_file_by_id(file_item['id'])
+                if db_file and db_file.path:
+                    file_item['path'] = db_file.path
+            except Exception:
+                pass
+
+
 async def add_file_context(messages: list, chat_id: str, user) -> list:
     """
     Add file URLs to messages for native function calling.
@@ -1758,14 +1770,7 @@ async def add_file_context(messages: list, chat_id: str, user) -> list:
 
         # Resolve file paths from DB so the model can use
         # jawafdehi_upload_document_source with real file paths.
-        for file_item in files_with_urls:
-            if 'path' not in file_item and file_item.get('id'):
-                try:
-                    db_file = await Files.get_file_by_id(file_item['id'])
-                    if db_file and db_file.path:
-                        file_item['path'] = db_file.path
-                except Exception:
-                    pass
+        await _resolve_file_paths(files_with_urls)
 
         file_tags = [format_file_tag(file) for file in files_with_urls]
         file_context = '<attached_files>\n' + '\n'.join(file_tags) + '\n</attached_files>\n\n'
