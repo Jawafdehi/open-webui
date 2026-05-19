@@ -90,9 +90,10 @@ verify_model_create_permission() {
     fi
 
     # Attempt a read on models to verify basic access
+    # NOTE: no trailing slash — /api/v1/models/ returns the SPA HTML, not JSON
     local model_check
     model_check=$(curl -s -w "\n%{http_code}" \
-        -X GET "${OWUI_API}/models/" \
+        -X GET "${OWUI_API}/models" \
         -H "Authorization: Bearer ${OWUI_API_KEY}" \
         -H "Content-Type: application/json" 2>/dev/null)
     http_code=$(echo "$model_check" | tail -1)
@@ -112,7 +113,7 @@ apply_models() {
     verify_model_create_permission
 
     local existing
-    existing=$(_api_call GET "/models/" "" 2>/dev/null || echo "[]")
+    existing=$(_api_call GET "/models" "" 2>/dev/null || echo '{"data":[]}')
     local model_dir="${CONFIGS_DIR}/models"
 
     [ ! -d "$model_dir" ] && warn "No configs/models/ directory found" && return
@@ -126,7 +127,8 @@ apply_models() {
         [ -z "$model_id" ] && warn "Skipping $model_file: no 'id' field" && continue
 
         # Check if model already exists
-        if echo "$existing" | jq -e --arg id "$model_id" '.items // [] | any(.id == $id)' > /dev/null 2>&1; then
+        # Response uses .data (OpenWebUI /api/v1/models format), not .items
+        if echo "$existing" | jq -e --arg id "$model_id" '(.data // .items // []) | any(.id == $id)' > /dev/null 2>&1; then
             info "Model '$model_id' already exists — skipping"
             continue
         fi
@@ -141,11 +143,9 @@ apply_models() {
             info "  Model '$model_id' created successfully."
         else
             warn "Failed to create model $model_id"
-            warn "  This is typically a permissions issue. The API key must belong to an"
-            warn "  admin user or a user with the 'workspace.models' permission."
-            warn "  Fix: Open https://chat.jawafdehi.org/admin → Settings → API Keys"
-            warn "  and ensure the key in admin-api-key.txt is for an admin user,"
-            warn "  or grant 'workspace.models' permission to this user's group."
+            warn "  If HTTP 401: the API key may not have admin role or workspace.models"
+            warn "  permission. Check https://chat.jawafdehi.org/admin → Settings."
+            warn "  If HTTP 502/503: the backend may still be starting. Retry in a moment."
         fi
     done
 
