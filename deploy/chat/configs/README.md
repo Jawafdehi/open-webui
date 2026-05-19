@@ -10,8 +10,8 @@ configs/
 ├── models/
 │   └── jawafdehi-caseworker.json       # Deployed model config (full, not a skeleton)
 ├── skills/
-│   ├── skills.json                     # Copied from jawafdehi-meta at deploy
-│   └── *.md                            # Copied from jawafdehi-meta at deploy
+│   ├── skills.json                     # Skill manifest (id, name, description, tags)
+│   └── *.md                            # Skills (pulled from jawafdehi-meta at deploy)
 └── knowledge/
     └── collections.json                # KB collection metadata
 ```
@@ -40,9 +40,8 @@ by the bootstrap script with no manual steps needed.
 ## Skills
 
 Caseworker skills are loaded as native OpenWebUI Skills (not Knowledge Base).
-The skills manifest (`skills.json`) and content files live in
-`jawafdehi-meta/.kiro/skills/` as the source of truth, and are copied to
-`configs/skills/` at deploy time by `deploy.sh`.
+Skill definitions live in `skills/skills.json`, and the Markdown content files
+are pulled from `jawafdehi-meta/.kiro/skills/` at deploy time.
 
 The `apply_skills()` function in the bootstrap script:
 
