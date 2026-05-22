@@ -76,6 +76,11 @@ if [ -x "${BOOTSTRAP}" ]; then
       cp "/tmp/jawafdehi-meta-fetch/.kiro/skills/${skill}/SKILL.md" "${SKILLS_DIR}/${skill}.md"
     fi
   done
+  # Copy case draft template
+  if [ -f "/tmp/jawafdehi-meta-fetch/.agents/caseworker/instructions/case-template.md" ]; then
+    cp "/tmp/jawafdehi-meta-fetch/.agents/caseworker/instructions/case-template.md" \
+       "${SKILLS_DIR}/case-template.md"
+  fi
   rm -rf /tmp/jawafdehi-meta-fetch
 
   echo "--- Bootstrapping configs ---"
