@@ -55,6 +55,7 @@ router = APIRouter()
 
 
 PAGE_ITEM_COUNT = 30
+USER_INFO_BATCH_LIMIT = 100
 
 
 @router.get('/', response_model=UserGroupIdsListResponse)
@@ -439,19 +440,25 @@ async def get_user_by_id(user_id: str, user=Depends(get_admin_user), db: AsyncSe
 async def get_users_info_by_ids(
     user_ids: list[str], user=Depends(get_verified_user), db: AsyncSession = Depends(get_async_session)
 ):
+    if len(user_ids) > USER_INFO_BATCH_LIMIT:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f'Maximum {USER_INFO_BATCH_LIMIT} user IDs allowed',
+        )
+
     users = await Users.get_users_by_user_ids(user_ids, db=db)
-    user_groups = await Groups.get_groups_by_member_ids([user.id for user in users], db=db)
+    user_groups = await Groups.get_groups_by_member_ids([u.id for u in users], db=db)
 
     return {
         'users': [
             UserInfoResponse(
                 **{
-                    **user.model_dump(),
-                    'groups': [{'id': group.id, 'name': group.name} for group in user_groups.get(user.id, [])],
-                    'is_active': Users.is_active(user),
+                    **u.model_dump(),
+                    'groups': [{'id': group.id, 'name': group.name} for group in user_groups.get(u.id, [])],
+                    'is_active': Users.is_active(u),
                 }
             )
-            for user in users
+            for u in users
         ],
         'total': len(users),
     }
@@ -469,7 +476,6 @@ async def get_user_info_by_id(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.USER_NOT_FOUND,
         )
-
 
 
 @router.get('/{user_id}/oauth/sessions')
