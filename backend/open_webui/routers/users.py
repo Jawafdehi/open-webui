@@ -435,25 +435,41 @@ async def get_user_by_id(user_id: str, user=Depends(get_admin_user), db: AsyncSe
         )
 
 
+@router.post('/info', response_model=UserInfoListResponse)
+async def get_users_info_by_ids(
+    user_ids: list[str], user=Depends(get_verified_user), db: AsyncSession = Depends(get_async_session)
+):
+    users = await Users.get_users_by_user_ids(user_ids, db=db)
+    user_groups = await Groups.get_groups_by_member_ids([user.id for user in users], db=db)
+
+    return {
+        'users': [
+            UserInfoResponse(
+                **{
+                    **user.model_dump(),
+                    'groups': [{'id': group.id, 'name': group.name} for group in user_groups.get(user.id, [])],
+                    'is_active': Users.is_active(user),
+                }
+            )
+            for user in users
+        ],
+        'total': len(users),
+    }
+
+
 @router.get('/{user_id}/info', response_model=UserInfoResponse)
 async def get_user_info_by_id(
     user_id: str, user=Depends(get_verified_user), db: AsyncSession = Depends(get_async_session)
 ):
-    user = await Users.get_user_by_id(user_id, db=db)
-    if user:
-        groups = await Groups.get_groups_by_member_id(user_id, db=db)
-        return UserInfoResponse(
-            **{
-                **user.model_dump(),
-                'groups': [{'id': group.id, 'name': group.name} for group in groups],
-                'is_active': await Users.is_user_active(user_id, db=db),
-            }
-        )
+    users = (await get_users_info_by_ids([user_id], user=user, db=db))['users']
+    if users:
+        return users[0]
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.USER_NOT_FOUND,
         )
+
 
 
 @router.get('/{user_id}/oauth/sessions')

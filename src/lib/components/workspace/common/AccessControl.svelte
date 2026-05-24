@@ -4,7 +4,7 @@
 	const i18n = getContext('i18n');
 
 	import { getGroups, getGroupById, getGroupInfoById } from '$lib/apis/groups';
-	import { getUserInfoById } from '$lib/apis/users';
+	import { getUsersInfoByIds } from '$lib/apis/users';
 	import { WEBUI_API_BASE_URL } from '$lib/constants';
 	import XMark from '$lib/components/icons/XMark.svelte';
 	import Badge from '$lib/components/common/Badge.svelte';
@@ -302,22 +302,19 @@
 			resolvingUserIds.add(id);
 		}
 
-		const fetched = await Promise.all(
-			pendingIds.map(async (id) => {
-				const user = await getUserInfoById(localStorage.token, id).catch((error) => {
-					console.error(error);
-					return null;
-				});
-				return { id, user };
-			})
-		);
+		const res = await getUsersInfoByIds(localStorage.token, pendingIds).catch((error) => {
+			console.error(error);
+			return null;
+		});
 
 		const nextUserById = { ...userById };
-		for (const item of fetched) {
-			if (item.user?.id) {
-				nextUserById[item.id] = item.user;
+		for (const user of res?.users ?? []) {
+			if (user?.id) {
+				nextUserById[user.id] = user;
 			}
-			resolvingUserIds.delete(item.id);
+		}
+		for (const id of pendingIds) {
+			resolvingUserIds.delete(id);
 		}
 		userById = nextUserById;
 	};
