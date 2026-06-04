@@ -50,3 +50,11 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             BUILD_HASH=${{ github.sha }}
+      - name: Trigger Dokploy redeploy
+        if: github.ref == 'refs/heads/jawafdehi-main'
+        run: |
+          curl -s -X POST \
+            -H "x-api-key: ${{ secrets.DOKPLOY_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            "https://infra.jawafdehi.org/api/compose.deploy" \
+            -d '{"composeId":"cnL6qss7fOjk-g2tlp4Ua","title":"Auto-deploy: ${{ github.sha }}"}'
