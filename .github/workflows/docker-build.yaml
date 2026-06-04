@@ -4,7 +4,6 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - jawafdehi-custom
       - jawafdehi-main
     tags:
       - v*
