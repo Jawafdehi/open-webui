@@ -2745,6 +2745,23 @@ async def process_chat_payload(request, form_data, user, metadata, model):
                         client, tool_specs = result
                         mcp_clients[server_id] = client
 
+                        # Jawafdehi: per-tool approval for MCP tools. The gate in
+                        # get_tools/meta only covers workspace toolkits, so source
+                        # the list from this MCP server connection's
+                        # config.approval_tools (raw tool names). Listed tools get
+                        # needs_approval=True and require in-chat approval when
+                        # ENABLE_TOOL_APPROVAL is on.
+                        approval_tools = []
+                        for conn in request.app.state.config.TOOL_SERVER_CONNECTIONS:
+                            if (
+                                conn.get('type') == 'mcp'
+                                and conn.get('info', {}).get('id') == server_id
+                            ):
+                                approval_tools = (
+                                    conn.get('config', {}).get('approval_tools') or []
+                                )
+                                break
+
                         for tool_spec in tool_specs:
 
                             async def make_tool_function(client, function_name):
@@ -2767,6 +2784,7 @@ async def process_chat_payload(request, form_data, user, metadata, model):
                                 'type': 'mcp',
                                 'client': client,
                                 'direct': False,
+                                'needs_approval': tool_spec['name'] in approval_tools,
                             }
                     except Exception as e:
                         log.debug(e)
