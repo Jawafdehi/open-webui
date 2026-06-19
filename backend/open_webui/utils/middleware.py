@@ -1355,7 +1355,56 @@ async def chat_completion_tools_handler(
                     allowed_params = spec.get('parameters', {}).get('properties', {}).keys()
                     tool_function_params = {k: v for k, v in tool_function_params.items() if k in allowed_params}
 
-                    if tool.get('direct', False):
+                    # --- Jawafdehi tool-approval gate (default/non-native path) ---
+                    # The native streaming handler has its own gate; this path
+                    # (default function calling) executes tools directly, so
+                    # mirror the gate here. Modal is driven by the approval:tool
+                    # event_caller round-trip (handled in +layout.svelte).
+                    needs_approval = tool.get('needs_approval', False)
+                    tool_approval_enabled = getattr(
+                        request.app.state.config, 'ENABLE_TOOL_APPROVAL', True
+                    )
+                    approved = True
+                    if needs_approval and tool_approval_enabled and event_caller:
+                        from open_webui.utils.pending_approvals import (
+                            add_pending_approval,
+                            wait_for_approval,
+                            remove_pending_approval,
+                        )
+
+                        approval_id = tool_call.get('id') or str(uuid4())
+                        add_pending_approval(
+                            approval_id,
+                            {
+                                'name': tool_function_name,
+                                'arguments': tool_function_params,
+                                'user_id': str(user.id),
+                                'chat_id': metadata.get('chat_id'),
+                            },
+                        )
+                        approval_response = None
+                        try:
+                            approval_response = await event_caller(
+                                {
+                                    'type': 'approval:tool',
+                                    'data': {
+                                        'id': approval_id,
+                                        'name': tool_function_name,
+                                        'arguments': tool_function_params,
+                                    },
+                                }
+                            )
+                        except Exception:
+                            pass
+                        if not approval_response or 'error' in approval_response:
+                            result = await wait_for_approval(approval_id)
+                            approval_response = {'approved': result.get('approved', False)}
+                        remove_pending_approval(approval_id)
+                        approved = approval_response.get('approved', False)
+
+                    if not approved:
+                        tool_result = 'Tool call was denied by the user.'
+                    elif tool.get('direct', False):
                         tool_result = await event_caller(
                             {
                                 'type': 'execute:tool',
